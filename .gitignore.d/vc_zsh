@@ -1,4 +1,5 @@
 *
+!/.config/sheldon/plugins-zsh.toml
 !/.config/zsh/backup_func
 !/.config/zsh_migrate/zlogin
 !/.config/zsh_migrate/zlogout

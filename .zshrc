@@ -97,7 +97,7 @@ bindkey '^x^e' edit-command-line
 
 #plugins
 if (( $+commands[sheldon] )); then              # только для zsh
-   eval "$(sheldon source)"
+   eval "$(sheldon --config-file $XDG_CONFIG_HOME/sheldon/plugins-zsh.toml source)"
 fi
 
 if (( $+commands[atuin] )); then
