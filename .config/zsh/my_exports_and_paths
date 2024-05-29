@@ -1,0 +1,332 @@
+#!/bin/bash
+
+if [ -f /etc/hostname ]; then
+	export HOSTNAME="$(cat /etc/hostname)"
+fi
+
+export TMP="$HOME/tmp"
+export TEMP="$TMP"
+export TMPDIR="$TMP"
+export TMPPREFIX="${TMPDIR}/zsh"
+
+if [ ! -d "${TMP}" ]; then mkdir "${TMP}"; fi
+# Use hostname in TMUX_TMPDIR as $HOME may be on nfs.
+export TMUX_TMPDIR="${TMPDIR}/tmux-${HOST}-${UID}"
+if [ ! -d "${TMUX_TMPDIR}" ]; then mkdir -p "${TMUX_TMPDIR}"; fi
+
+##########
+
+if [ -d "$HOME/.keysdir" ]; then
+	export keysdir="$HOME/.keysdir"
+fi
+
+# default apps
+export EDITOR="nvim"
+export TERMINAL="alacritty"
+# export BROWSER="firefox"
+
+# cleaning up home folder
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_STATE_HOME="$HOME/.local/state"
+export XDG_CACHE_HOME="$HOME/.cache"
+
+export GNUPGHOME="$XDG_DATA_HOME/gnupg"
+
+# export GTK2_RC_FILES="$XDG_CONFIG_HOME"/gtk-2.0/gtkrc
+# export JULIA_DEPOT_PATH="$XDG_DATA_HOME/julia:$JULIA_DEPOT_PATH"
+# export NODE_REPL_HISTORY="$XDG_DATA_HOME"/node_repl_history
+
+export JUPYTER_CONFIG_DIR="$XDG_CONFIG_HOME/jupyter"
+
+###
+prependToPath "$HOME"/.local/bin
+prependToPath "$HOME"/bin
+# appendToPath "/usr/games"
+
+### Packagemanagers
+## Homebrew
+case "${OSTYPE}" in
+linux*) brew_path="/home/linuxbrew/.linuxbrew" ;;
+darwin*) brew_path="/opt/homebrew" ;;
+esac
+if [[ -f "${brew_path}/bin/brew" ]]; then
+	eval "$("${brew_path}"/bin/brew shellenv)"
+fi
+
+## GUIX
+if [ -f "$HOME/.guix-profile" ]; then
+	GUIX_PROFILE="/home/ru/.guix-profile"
+	command source "$GUIX_PROFILE/etc/profile"
+fi
+
+export GUIX_LOCPATH=$HOME/.guix-profile/lib/locale
+
+# export SSL_CERT_DIR="$HOME/.guix-profile/etc/ssl/certs"
+# export SSL_CERT_FILE="$HOME/.guix-profile/etc/ssl/certs/ca-certificates.crt"
+# export GIT_SSL_CAINFO="$SSL_CERT_FILE"
+# export CURL_CA_BUNDLE="$SSL_CERT_FILE"
+
+# if [ -f "$HOME/.config/guix/current" ]; then
+# 	GUIX_PROFILE="/home/ru/.config/guix/current"
+# 	command source "$GUIX_PROFILE/etc/profile"
+# fi
+# appendToPath "$HOME"/.config/guix/current/bin
+# appendToPath "$HOME"/.guix-profile/bin
+
+### Programming languages.
+## GO
+export GOROOT="/usr/local/go"
+export GOPATH="${XDG_DATA_HOME:-$HOME/.local/share}/go"
+export GOBIN="$GOPATH/bin"
+appendToPath "$GOROOT/bin"
+appendToPath "$GOBIN"
+
+## Python Environment Manager
+export CONDA_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/miniconda3"
+export CONDARC="${XDG_CONFIG_HOME:-$HOME/.config}/conda/.condarc"
+case "${OSTYPE}" in
+linux*) CONDA_PREFIX="$CONDA_ROOT" ;;
+darwin*) CONDA_PREFIX="" ;;
+esac
+if [[ -f ${CONDA_PREFIX}/bin/conda ]]; then
+	eval "$("${CONDA_PREFIX}/bin/conda" "shell.zsh" "hook")"
+fi
+
+## RUST
+export CARGO_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/cargo"
+export RUSTUP_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/rustup"
+prependToPath "$CARGO_HOME/bin"
+
+## Ruby Environment Manager
+export RBENV_ROOT=${XDG_DATA_HOME:-$HOME/.local/share}/rbenv
+# if programExists rbenv; then
+# 	eval "$(rbenv init - n)"
+# fi
+
+## Haskel
+# [ -f "/home/ru/.ghcup/env" ] && source "/home/ru/.ghcup/env" # ghcup-env
+
+## NODE Environment Managers
+# FastNodeManager in Rust "https://github.com/Schniz/fnm"
+# if programExists fnm; then
+# 	eval "$(fnm env --use-on-cd)"
+# fi
+
+# NodeVersionManage "https://github.com/nvm-sh/nvm"
+export NVM_DIR=${XDG_DATA_HOME:-$HOME/.local/share}/nvm
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+export NPM_CONFIG_USERCONFIG=$XDG_CONFIG_HOME/npm/npmrc
+export NPM_CONFIG_CACHE=$XDG_CACHE_HOME/npm
+
+GIT_HOME=$HOME/aggregate
+export GIT_HOME
+
+my_repo=("inst" "shell" "run" "net" "paenlare")
+for r in "${my_repo[@]}"; do
+	[[ -d "$GIT_HOME/re_$r" ]] && eval DOT_"$r"="$GIT_HOME/re_$r" && export DOT_"$r"
+	if [ -d "$GIT_HOME/re_$r"/bin ]; then
+		eval BIN_"$r"="$GIT_HOME/re_$r/bin" && export BIN_"$r"
+		# for d in $(command du "\$BIN_$r" | cut -f2); do   # "\$BIN_$r" a not visible after eval?
+		for d in $(command find "$GIT_HOME/re_$r/bin" -maxdepth 1 -type d); do
+			appendToPath "$d"
+		done
+	fi
+done
+
+# Adds ~/.local/bin and subfolders to $PATH
+# export PATH="$PATH:${$(find ~/.local/bin -maxdepth 1 -type d -printf %p:)%%:}"
+
+# export NOTMUCH_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/notmuch-config"
+# export WGETRC="${XDG_CONFIG_HOME:-$HOME/.config}/wget/wgetrc"
+# export PASSWORD_STORE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/password-store"
+# export ZDOTDIR="$HOME/.config/zsh"
+
+export MANPAGER="less -R --use-color -Dd+r -Du+b"
+
+###############
+
+# Environment variables
+
+export ZSH_PLUGINS_ALIAS_TIPS_TEXT="Alias: "
+export ZSH_TMUX_AUTOSTART='false'
+export ZSH_TMUX_AUTOSTART_ONCE='false'
+export ZSH_TMUX_AUTOCONNECT='false'
+export DISABLE_AUTO_TITLE='true'
+
+# export GPG_TTY=$(tty)
+
+export R_HOME=/usr/lib/R
+
+#export VIMRUNTIME=/usr/share/nvim/runtime
+
+export LC_ALL=ru_RU.UTF-8
+export LANG=ru_RU.UTF-8
+export LANGUAGE=ru_RU.UTF-8
+
+# export LD_LIBRARY_PATH=$HOME/miniconda3/envs/JupyterSystemEnv/lib:$LD_LIBRARY_PATH
+# export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
+
+# {{{ History and path
+
+export HISTCONTROL=ignoreboth:erasedups
+# Don't put duplicate lines in the history and do not add lines that start with a space
+# export HISTCONTROL=erasedups:ignoredups:ignorespace
+
+# XDG Paths
+export XDG_CONFIG_HOME=$HOME/.config
+export XDG_CACHE_HOME=$HOME/.cache
+export XDG_DATA_HOME=$HOME/.local/share
+
+# To have colors for ls and all grep commands such as grep, egrep and zgrep
+export CLICOLOR=1
+export LS_COLORS='no=00:fi=00:di=00;34:ln=01;36:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.gz=01;31:*.bz2=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.avi=01;35:*.fli=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.ogg=01;35:*.mp3=01;35:*.wav=01;35:*.xml=00;31:'
+
+# -------------------------------------------------------------------------- }}}
+# {{{ Ibus settings
+
+#type ibus-setup in terminal to change settings and start the daemon
+#delete the hashtags of the next lines and restart
+#export GTK_IM_MODULE=ibus
+#export XMODIFIERS=@im=dbus
+#export QT_IM_MODULE=ibus
+
+# -------------------------------------------------------------------------- }}}
+# {{{ Default Browers, File Manager, and 256 colors.
+if programExists nbrowser; then
+	export BROWSER="nbrowser"
+elif programExists brave-browser; then
+	export BROWSER=brave-browser
+elif programExists google-chrome; then
+	export BROWSER=google-chrome
+elif programExists yandex-browser; then
+	export BROWSER=yandex-browser
+elif programExists firefox; then
+	export BROWSER=firefox
+else
+	export BROWSER=""
+fi
+
+if programExists w3m; then
+	export BROWSERCLI=w3m
+else
+	export BROWSERCLI=""
+fi
+
+if programExists luakit; then
+	export BROWSERMIN=luakit
+elif programExists surf; then
+	export BROWSERMIN=surf
+else
+	export BROWSERMIN=""
+fi
+
+# export FILE=ranger
+# export TERM=xterm-256color
+# export TERMINAL=alacritty
+# export WM=awesome
+
+# -------------------------------------------------------------------------- }}}
+# {{{ autodoc location.
+
+# if  dirExists ${GITHOME}/autodoc; then
+#   AUTODOCPATH=${GITHOME}/autodoc
+# else
+#   [[ $echoWarning == 1 ]] && echo "WARNING: autodoc is not installed."
+#   AUTODOCPATH=""
+# fi
+# export AUTODOCPATH
+
+# -------------------------------------------------------------------------- }}}
+# {{{ docbld location and function.  These must go together.
+
+# if dirExists ${GITHOME}/docbld; then
+#   DOCBLDPATH=${GITHOME}/docbld
+# else
+#   [[ $echoWarning == 1 ]] && echo "WARNING: docbld is not installed."
+#   DOCBLDPATH=""
+# fi
+# export DOCBLDPATH
+
+# -------------------------------------------------------------------------- }}}
+# {{{ dotnet
+
+# if dirExists ${HOME}/.dotnet; then
+#   DOTNET_ROOT=${HOME}/.dotnet
+#   export PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools
+# else
+#   DOTNET_ROOT=""
+# fi
+# export DOTNET_ROOT
+
+# -------------------------------------------------------------------------- }}}
+# {{{ Editor.
+
+export MANWIDTH=76
+
+if programExists nvim; then
+	EDITOR=$(which nvim)
+elif programExists lvim; then
+	EDITOR=$(which lvim)
+else
+	EDITOR=$(which vim)
+fi
+export EDITOR
+
+export VISUAL="nvim"
+export PAGER="less"
+export READER="zathura"
+# -------------------------------------------------------------------------- }}}
+# {{{ FZF customizations
+
+# export FZF_DEFAULT_COMMAND='rg --files --no-ignore-vcs --hidden'
+# Fzf
+# export FZF_DEFAULT_COMMAND='fd --hidden --follow --exclude=.git --exclude=node_modules'
+# export FZF_COMPLETION_TRIGGER=','
+# export FZF_DEFAULT_OPTS="
+# --layout=reverse --info=inline --height=80% --multi --cycle --margin=1 --border=rounded
+# --preview '([[ -f {} ]] && (bat --style=numbers --color=always --line-range=:500 {} || cat {})) || ([[ -d {} ]] \
+# && (exa -TFl --group-directories-first --icons --git -L 2 --no-user {} | less)) || echo {} 2> /dev/null | head -200'
+# --prompt=' ' --pointer='>' --marker='✔'
+# --color='hl:148,hl+:154,prompt:blue,pointer:032,marker:010,bg+:000,gutter:000'
+# --preview-window=right:65%
+# --bind '?:toggle-preview'
+# --bind 'ctrl-a:select-all'
+# --bind 'ctrl-y:execute-silent(echo {+} | clipcopy)'
+# --bind 'ctrl-e:execute(nvim-qt {+})'
+# --bind 'ctrl-v:execute(code {+})'"
+#
+# export FZF_CTRL_T_COMMAND='fd -t f -HF -E=.git -E=node_modules'
+# export FZF_TMUX_OPTS='-p 90%'
+
+# -------------------------------------------------------------------------- }}}
+# {{{ newdoc location and functions.  These must go together.
+
+# if dirExists ${GITHOME}/newdoc; then
+#    NEWDOCPATH=${GITHOME}/newdoc
+# else
+#    [[ $echoWarning == 1 ]] && echo "WARNING: newdoc is not installed."
+#   NEWDOCPATH=""
+# fi
+# export NEWDOCPATH
+#
+# if [[ -d ${NEWDOCPATH} ]]; then
+#   newdoc() {
+#     ${NEWDOCPATH}/newdoc "$@"
+#   }
+# fi
+
+# -------------------------------------------------------------------------- }}}
+
+[ -s "/home/ru/.config/nvim-Lazyman/.lazymanrc" ] && source "/home/ru/.config/nvim-Lazyman/.lazymanrc"
+bindkey -s "^n" "nvims\n"
+
+# # bun
+# export BUN_INSTALL="$HOME/.bun"
+# export PATH="$PATH:$BUN_INSTALL/bin"
+# # bun completions
+# [ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"
+
+export PASSWORD_STORE_ENABLE_EXTENSIONS=true

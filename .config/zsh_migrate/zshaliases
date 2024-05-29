@@ -1,0 +1,225 @@
+# Хороший форк GNU Screen: tscreen!
+  # [[ -x `which tscreen` ]] && alias screen="tscreen"
+
+# Обертка для rm(1)
+# Хорошая, но не может удалять каталоги :/
+#--------------------------------------------------
+# [[ -x `which shred` ]] && alias rm='shred -u -v'
+#-------------------------------------------------- 
+
+# получить 10 лучших команд оболочки:
+# alias top10='print -l ? ${(o)history%% *} | uniq -c | sort -nr | head -n 10'
+alias top10='print -l ${(o)history%% *} | uniq -c | sort -nr | head -n 10'
+
+# См. <http://strcat.neessen.net/hacks/rand-useragent.pl> ;-)
+   if [[ -x ~/bin/rand-useragent.pl ]] && [[ -x `which w3m` ]]; then
+          alias w3m='w3m -o user_agent="`rand-useragent.pl`" $1'
+   fi
+# Создаем сертификат
+  alias cert="openssl req -new -x509 -nodes -out cert.pem -keyout cert.key -days 365"
+# Отступ (в соответствии с GCS - Gnu Coding Standards)
+  [[ -x `which indent` ]] && alias indent="indent -nbad -bap -nbc -bbo -bl -bli2 -bls -ncdb -nce -cp1 -cs -di2 -ndj -nfc1 -nfca -hnl -i2 -ip5 -lp -pcs -psl -nsc -nsob"
+# Быстрое редактирование часто используемого файла настроек
+   alias Ez='$EDITOR ~/.zshrc'
+   alias Ev='$EDITOR ~/.vimrc'
+   alias Em='$EDITOR ~/.muttrc'
+   alias Esc='$EDITOR ~/.screenrc'
+# Отключите "коррекцию орфографии" для этой команды:
+   alias mv="nocorrect mv"
+   alias cp="nocorrect cp"
+   alias man="nocorrect man"
+   alias mkdir="nocorrect mkdir"
+   alias mcd="nocorrect mcd"
+   alias rm="nocorrect rm"
+   # Переместите фотографии в ~D/Pics
+   alias picmv="mv *(#i).(jp{,e}g|gif|png|bmp) ~D/Pics/"
+
+# /quick-stat/
+   alias atime="stat -c '%X - %x - %n'"
+   alias mtime="stat -c '%Y - %y - %n'"
+   alias owner="stat -c '%U - %u - %n'"
+   alias group="stat -c '%G - %g - %n'"
+
+# Псевдонимы, связанные с VIM ;o) btw. ``$SHELL:t'' - это модификатор из Z
+# Shell. В других оболочках вместо него можно использовать ``${SHELL##*/}''. Допустимыe
+# Модификаторы можно найти в ``info -f zsh -n Modifiers''.
+   alias :{w,q,wq,qa,wqa,x}{,!}='echo "Это $SHELL:t, а не Vi(m)"'
+   alias vi="${EDITOR}"
+   alias view="${EDITOR} -R"
+   alias ex="${EDITOR} -e"
+
+# MPlayer на /dev/ttyN
+  alias fbmplayer='mplayer -vo fbdev2 -vf scale=1280:1024 "$@"'
+# быстрое и грязное зеркало
+  alias mirror="noglob wget --mirror --no-parent --timestamping --continue --recursive $1"
+
+# Это для Linux (строго говоря, slocate под Slackware, но
+# это работает с любым дистрибутивом; предполагается, что slocate). См.
+# <http://www.geekreview.org/slocate/> для подробностей.
+if [[ "${OSTYPE}" = "linux-gnu" ]] && [[ -x $(which plocate) ]] ; then
+	alias hupdatedb="sudo updatedb -U ${HOME} --output=${HOME}/.locatedb -e /home/ru/tmp,/home/ru/MuttMail,/home/ru/.cpan"
+	alias hlocate="plocate --database=${HOME}/.locatedb $@"
+else
+# Это для GNU updatedb
+  alias hupdatedb="sudo updatedb --localpaths="$HOME" --output=$HOME/.locatedb --prunefs="/""
+  alias hlocate="locate -d ${HOME}/.locatedb"
+fi
+
+# Этот псевдоним нужен только не-рутам
+if (( EUID != 0 )); then
+	if [ -e "/etc/debian_version" ]; then
+		alias apt="sudo apt"
+		alias apt-get="sudo apt-get"
+		alias apt-cache="sudo apt-cache" # Необходимо для `apt-cache gencaches`.
+		alias dpkg="sudo dpkg"
+		alias aptitude="sudo aptitude"
+		alias dpkg-reconfigure="sudo dpkg-reconfigure"
+	fi
+	# Linux/Unix
+	alias ifconfig="sudo ifconfig"
+	alias shutdown="sudo shutdown"
+	alias tcpdump="sudo tcpdump"
+	alias nmap="sudo nmap"
+	# делает снимок с /dev/ttyN
+	# alias mkscreeny="cd ~/shots/ ; fbgrab -s 5 -w 1024 -h 768 -b 16 `date+"%F-%T"`.png"
+fi
+
+# копирование/перемещение с резервным копированием
+  #if [ ${OS} = "linux-gnu" -n ${(MS)$(mv --version 2>/dev/null)#GNU} ]; then
+     # GNU нумерует файлы резервных копий.
+     # --verbose и --backup являются GNUи *narf*
+
+     # if [[ "${OSTYPE}" = linux-gnu ]]; then
+	    #  (( ${+VERSION_CONTROL} )) || export VERSION_CONTROL="numbered"
+	    #  alias mv="nocorrect mv --verbose --backup=numbered"
+	    #  alias cp="nocorrect cp --verbose --backup=numbered"
+     # fi
+
+  #fi
+
+# X11? Да! Открытый порт? Нет! 
+# alias sx='startx -- -nolisten tcp 2>&1 ~/.startx-errors'
+# alias sx='startx -- -nolisten tcp >& $HOME/.startx-errors'
+   alias sx='startx -- -deferglyphs 16 -dpi 100 -nolisten tcp >& $HOME/.startx-errors'
+
+# Быстрый chmod
+   alias rw-='chmod 600'
+   alias rwx='chmod 700'
+# Сделать/создать/преобразовать фотографии/миниатюры
+   alias _GIF='convert -verbose -interlace LINE' 
+   alias _thumb='convert -geometry 100x100 -interlace LINE -verbose' 
+   alias _thumb150='convert -geometry 150x150 -interlace LINE -verbose' 
+   alias _thumb200='convert -geometry 200x200 -interlace LINE -verbose' 
+
+
+# *Очень* часто используется!
+   alias lad='ls -d -- .*(/)' # показывать только точечные каталоги
+   alias lsa='ls -a -- .*(.)'				# показывать только точечные файлы
+#--------------------------------------------------
+   # alias lsd='ls -d -- *(/)' # показывать только каталоги
+#-------------------------------------------------- 
+   alias lse='ls -ld -- *(/^F)' # показывать только пустые каталоги
+   alias lsen='ls -d *(/om[1])'				# самый новый каталог
+   # FIXME: Замените ``grep -v'', ``2&>/dev/null'' на синтаксис только для zsh
+   alias lsnew='=ls -rtlh -- *(.) | tail $@ 2&>/dev/null' # только самые новые файлы
+   alias lsold="=ls -rtl -- *(.) | head $@ 2&>/dev/null" # отображение самых старых файлов
+   alias lssmall="=ls -Sl -- *(.) | tail $@ 2&>/dev/null" # отображение самых маленьких файлов
+   alias lsx='ls -l -- *(*) | head $@ 2&>/dev/null' # показывать только исполняемые файлы
+   alias lssuid='ls -l -- *(s,S) | head $@ 2&>/dev/null' # показывать только suid-файлы
+   alias lsbig="ls -lSh -- *(.) | grep -v total | head $@ 2&>/dev/null" # показывать самые большие файлы
+   # показать отсортированные размеры всех каталогов
+   alias dua='du -s *(/DN) | sort -nr | cut -f 2- | while read a; do du -sh "$a"; done'
+   # показать отсортированные размеры каталогов только для видимых каталогов
+   alias duv='du -s *(/N) | sort -nr | cut -f 2- | while read a; do du -sh "$a"; done'
+   # показать отсортированные размеры каталогов только для скрытых каталогов
+   alias duh='du -s .*(/N) | sort -nr | cut -f 2- | while read a; do du -sh "$a"; done'
+
+
+# преобразование из верхнего уровня в нижний (или обратно)
+   alias UP2low='for i in *(.); mv $i ${i:l}'
+   alias low2UP='for i in *(.); mv $i ${i:u}'
+# ктаги *очень* полезны!
+   alias mktags='for i in **/*(/); do (cd $i; eval '\''ctags-exuberant *'\''); done; ctags-exuberant --file-scope=no -R'
+# Сделайте так, чтобы источник был с вами
+   alias C='./configure'
+   alias CH='./configure --help | $PAGER'
+# zmv - смотрите ``less ${^fpath}/zmv(N)'' для более подробной информации.
+   alias zcp='zmv -C'
+   alias zln='zmv -L'
+# простая замена для nmap (anywise ... :>)
+   alias pscan="command nc -vz $1 1-1024"
+   
+# Изменение отображения клавиатуры на лету (удобно для программирования)
+   if [[ -x $(which xmodmap) ]]; then
+      alias US-e="xmodmap ~/.keys-emacs-us; xmodmap -e 'keysym Alt_L = Meta_L Alt_L'"
+      alias US-v="xmodmap ~/.keys-vi-us; xmodmap -e 'keysym Alt_L = Meta_L Alt_L'"
+      alias US="xmodmap ~/.keys-vi-us; xmodmap -e 'keysym Alt_L = Meta_L Alt_L'"
+   fi
+# Суффиксные псевдонимы позволяют оболочке shell выполнять 
+# команду для файла по суффиксу, например, 'alias -s ps=gv' делает
+# 'foo.ps' выполнить команду 'gv foo.ps'.
+if [[ $ZSH_VERSION == 5.<->* ]]; then
+	# некоторые "псевдонимы файлов"
+	alias -s {ogg,flac,mpg,mpeg,avi,ogm,wmv,m4v,mp4,mov}="mplayer -idx"
+	alias -s {ogg,flac,mpg,mpeg,avi,ogm,wmv,m4v,mp4,mov}="mpv"
+	alias -s {jpg,JPG,jpeg,JPEG,png,PNG,gif,GIF}="mirage"
+	alias -s dvi=xdvi
+	alias -s pdf=xpdf
+	alias -s ps=gv
+	alias -s {htm,html,php,com,net,org,gov}="pick-web-browser"
+	alias -s tex=${EDITOR:-vi}
+	alias -s txt=${PAGER:-less}
+	# некоторые глобальные псевдонимы для перенаправления
+	alias -g N="&>/dev/null"
+	alias -g 1N="1>/dev/null"
+	alias -g 2N="2>/dev/null"
+	alias -g DN="/dev/null".
+	alias -g PI="|"
+	# Пагинация с меньшим / головным / хвостовым
+	alias -g LS='| less -S'
+	alias -g EL='|& less'
+	alias -g ELS='|& less -S'
+	alias -g TRIM='| cut -c 1-$COLUMNS'
+	alias -g H='| head'
+	alias -g HL='| head -n $(( +LINES ? LINES - 4 : 20 ))''
+	alias -g EH='|& head'
+	alias -g EHL='|& head -n $(( +LINES ? LINES - 4 : 20 ))''
+	alias -g TL='| tail -n $(( +LINES ? LINES - 4 : 20 ))''
+	alias -g ET='|& tail'
+	alias -g ETL='|& tail -n $(( +LINES ? LINES - 4 : 20 ))''
+	# Сортировка / подсчет
+	alias -g C='| wc -l'
+	alias -g SS='| sort'
+	alias -g Su='| sort -u'
+	alias -g Sn='| sort -n'
+	alias -g Snr='| sort -nr'
+	# grep(1)'ing
+	for switches in {,i}{,l,L}{,r}{,v}; do
+		eval "alias -g GG$switches='| egrep ${switches:+-$switches}'"
+		eval "alias -g EG$switches='|& egrep ${switches:+-$switches}'"
+		eval "alias -g XG$switches='| xargs egrep ${switches:+-$switches}'"
+		eval "alias -g X0G$switches='| xargs -0 egrep ${switches:+-$switches}'"
+	done
+
+	# awk
+	alias -g A1="| awk '{print \$1}'"
+	alias -g A2="| awk '{print \$2}'"
+	alias -g A3="| awk '{print \$3}'"
+	alias -g A4="| awk '{print \$4}'"
+	alias -g A5="| awk '{print \$5}'"
+	alias -g A6="| awk '{print \$6}'"
+	alias -g A7="| awk '{print \$7}'"
+	alias -g A8="| awk '{print \$8}'"
+	alias -g A9="| awk '{print \$9}'"
+	alias -g EA='|& awk '
+	alias -g EA1="|& awk '{print \$1}'"
+	alias -g EA2="|& awk '{print \$2}'"
+	alias -g EA3="|& awk '{print \$3}'"
+	alias -g EA4="|& awk '{print \$4}'"
+	alias -g EA5="|& awk '{print \$5}'"
+	alias -g EA6="|& awk '{print \$6}'"
+	alias -g EA7="|& awk '{print \$7}'"
+	alias -g EA8="|& awk '{print \$8}'"
+	alias -g EA9="|& awk '{print \$9}'"
+fi
+

@@ -1,0 +1,170 @@
+#!/bin/bash
+
+man() {
+	if command -v vimmanpager >/dev/null 2>&1; then
+		PAGER="vimmanpager" command man "$@"
+	else
+		command man "$@"
+	fi
+}
+
+confirm() {
+	local answer
+	echo -ne "zsh: sure you want to run '${YELLOW}$*${NC}' [yN]? "
+	read -rq answer
+	echo
+	if [[ "${answer}" =~ ^[Yy]$ ]]; then
+		command "${@}"
+	else
+		return 1
+	fi
+}
+
+confirm_wrapper() {
+	if [ "$1" = '--root' ]; then
+		local as_root='true'
+		shift
+	fi
+
+	local prefix=''
+
+	if [ "${as_root}" = 'true' ] && [ "${USER}" != 'root' ]; then
+		prefix="sudo"
+	fi
+	confirm ${prefix} "$@"
+}
+
+# poweroff() { confirm_wrapper --root $0 "$@"; }
+# reboot() { confirm_wrapper --root $0 "$@"; }
+# hibernate() { confirm_wrapper --root $0 "$@"; }
+
+# View Apache logs
+apachelog() {
+	if [ -f /etc/httpd/conf/httpd.conf ]; then
+		cd /var/log/httpd && ls -xAh && multitail --no-repeat -c -s 2 /var/log/httpd/*_log
+	else
+		cd /var/log/apache2 && ls -xAh && multitail --no-repeat -c -s 2 /var/log/apache2/*.log
+	fi
+}
+
+# Edit the Apache configuration
+apacheconfig() {
+	if [ -f /etc/httpd/conf/httpd.conf ]; then
+		sedit /etc/httpd/conf/httpd.conf
+	elif [ -f /etc/apache2/apache2.conf ]; then
+		sedit /etc/apache2/apache2.conf
+	else
+		echo "Error: Apache config file could not be found."
+		echo "Searching for possible locations:"
+		sudo updatedb && locate httpd.conf && locate apache2.conf
+	fi
+}
+
+# Edit the PHP configuration file
+phpconfig() {
+	if [ -f /etc/php.ini ]; then
+		sedit /etc/php.ini
+	elif [ -f /etc/php/php.ini ]; then
+		sedit /etc/php/php.ini
+	elif [ -f /etc/php5/php.ini ]; then
+		sedit /etc/php5/php.ini
+	elif [ -f /usr/bin/php5/bin/php.ini ]; then
+		sedit /usr/bin/php5/bin/php.ini
+	elif [ -f /etc/php5/apache2/php.ini ]; then
+		sedit /etc/php5/apache2/php.ini
+	else
+		echo "Error: php.ini file could not be found."
+		echo "Searching for possible locations:"
+		sudo updatedb && locate php.ini
+	fi
+}
+
+# Edit the MySQL configuration file
+mysqlconfig() {
+	if [ -f /etc/my.cnf ]; then
+		sedit /etc/my.cnf
+	elif [ -f /etc/mysql/my.cnf ]; then
+		sedit /etc/mysql/my.cnf
+	elif [ -f /usr/local/etc/my.cnf ]; then
+		sedit /usr/local/etc/my.cnf
+	elif [ -f /usr/bin/mysql/my.cnf ]; then
+		sedit /usr/bin/mysql/my.cnf
+	elif [ -f ~/my.cnf ]; then
+		sedit ~/my.cnf
+	elif [ -f ~/.my.cnf ]; then
+		sedit ~/.my.cnf
+	else
+		echo "Error: my.cnf file could not be found."
+		echo "Searching for possible locations:"
+		sudo updatedb && locate my.cnf
+	fi
+}
+
+# For some reason, rot13 pops up everywhere
+rot13() {
+	if [ $# -eq 0 ]; then
+		tr '[a-m][n-z][A-M][N-Z]' '[n-z][a-m][N-Z][A-M]'
+	else
+		echo $* | tr '[a-m][n-z][A-M][N-Z]' '[n-z][a-m][N-Z][A-M]'
+	fi
+}
+
+# Trim leading and trailing spaces (for scripts)
+trim() {
+	local var=$*
+	var="${var#"${var%%[![:space:]]*}"}" # remove leading whitespace characters
+	var="${var%"${var##*[![:space:]]}"}" # remove trailing whitespace characters
+	echo -n "$var"
+}
+# Fancy cd that can cd into parent directory, if trying to cd into file.
+# useful with ^F fuzzy searcher.
+cd() {
+	if (($ + 2)); then
+		builtin cd "$@" || exit
+		return 0
+	fi
+
+	if [ -f "$1" ]; then
+		echo "${yellow}cd ${1:h}${NC}" >&2
+		builtin cd "${1:h}" || exit
+		ls -l "$1"
+	else
+		builtin cd "${@}" || exit
+	fi
+}
+
+over_ssh() {
+	if [ -n "${SSH_CLIENT}" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+reload() {
+	exec "${SHELL}" "$@"
+}
+
+# startx() {
+# 	exec=startx "$@"
+# }
+
+# Copy file with a progress bar
+cpp() {
+	set -e
+	strace -q -ewrite cp -- "${1}" "${2}" 2>&1 |
+		awk '{
+	count += $NF
+	if (count % 10 == 0) {
+		percent = count / total_size * 100
+		printf "%3d%% [", percent
+		for (i=0;i<=percent;i++)
+			printf "="
+			printf ">"
+			for (i=percent;i<100;i++)
+				printf " "
+				printf "]\r"
+			}
+		}
+	END { print "" }' total_size="$(stat -c '%s' "${1}")" count=0
+}

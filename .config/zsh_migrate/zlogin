@@ -1,0 +1,38 @@
+# $Id: .zlogin,v 1.1 2004/06/10 09:59:46 dope Exp dope $
+#
+# .zlogin используется в оболочках для входа в систему.  Он должен содержать команды, которые
+# должны выполняться только в оболочках входа в систему.  Он должен использоваться для запуска
+# серии внешних команд (fortune, msgs и т. д.).
+#
+# Проверка входящих ftp-файлов.
+if [[ $(uname -n) = vaio ]]
+then
+	# INCOMING=/var/lib/mldonkey/incoming/files
+	INCOMING=/var/ftp/files
+	if [[ -d ${INCOMING} ]]
+	then
+		pushd ${INCOMING}
+		newfiles=( )
+		[[ -a .timestamp ]] || sudo touch .timestamp
+		setopt nullglob
+		for file in ^.timestamp
+			[[ $file -nt .timestamp ]] && newfiles=( $newfiles $file )
+			if [[ -n $newfiles ]]
+			then
+				echo "New files in ${INCOMING}:"
+				print -l "  "$newfiles
+				echo ""
+			fi
+			sudo touch .timestamp
+			popd
+		fi
+	fi
+
+# Check for TODO-entry
+if [[ -e ~/TODO ]] && [[ "$TERM" != "screen" ]]
+then
+	echo "Note: New TODO - entry!"
+	echo
+	cat ~/TODO
+	echo
+fi

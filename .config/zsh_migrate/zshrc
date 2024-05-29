@@ -1,0 +1,151 @@
+# $Id: .zshrc,v 1.1 2007/10/27 19:05:57 dope Exp $
+# 
+# README!
+# 
+# Filename              : ~/.zshrc
+# Назначение            : установочный файл для оболочки 'zsh'
+# Автор                 : Кристиан Шнайдер <strcat@gmx.net>
+# Домашняя страница     : http://www.strcat.de/zsh/
+# Последняя версия      : <http://strcat.de/dotfiles/#zsh>
+#
+# Структура этого файла:
+# Строки, начинающиеся с '#', являются комментариями.
+#
+# Быстро (хаха) посмотрите на zshbuiltins(1), zshcompwid(1),
+# zshcompsys(1), zshcompctl(1), zshexpn(1), zshmisc(1), zshmodules(1),
+# zshoptions(1), zshparam(1), zshzle(1) или - для хардлайнеров -
+# zshall(1).
+#
+# ,----[ man -k zsh )
+# |
+# | zsh (1)           - Z shell
+# | zshall (1)        - meta-man страница для Z shell
+# | zshbuiltins (1)   - встроенные команды zsh
+# | zshcalsys (1)     - календарная система zsh
+# | zshcompctl (1)    - программируемое завершение работы zsh
+# | zshcompsys (1)    - система завершения zsh
+# | zshcompwid (1)    - виджеты завершения zsh
+# | zshcontrib (1)    - вклад пользователей в zsh
+# | zshexpn (1)       - расширение и подстановка в zsh
+# | zshmisc (1)       - всё и даже больше
+# | zshmodules (1)    - загружаемые модули zsh
+# | zshoptions (1)    - опции zsh
+# | zshparam (1)      - параметры zsh
+# | zshroadmap (1)    - неформальное введение в руководство по zsh
+# | zshtcpsys (1)     - система zsh tcp
+# | zshzftpsys (1)    - внешний интерфейс функции zftp
+# | zshzle (1)        - редактор командной строки zsh
+# `----
+#
+# # Последовательность запуска Zsh:
+# 1) /etc/zshenv -> Всегда запускается для каждого zsh.   (login + interactive + other)
+# 2) ~/.zshenv -> Как правило, запускается для каждого zsh.  (вход в систему + интерактив + другое)
+# 3) /etc/zprofile -> Запускается для оболочек входа в систему.       (login)
+# 4) ~/.zprofile -> Запускается для оболочек входа в систему.       (login)
+# 5) /etc/zshrc -> Запуск для интерактивных оболочек. (login + interactive)
+# 6) ~/.zshrc -> Запуск для интерактивных оболочек. (login + interactive)
+# 7) /etc/zlogin -> Запуск для оболочек входа в систему.       (login)
+# 8) ~/.zlogin -> Запуск оболочек для входа в систему.       (login)
+#
+# Last modified: [ 2008-11-25 00:26:47 ]
+#
+#
+# ЭТОТ ФАЙЛ НЕ ДОЛЖЕН ИСПОЛЬЗОВАТЬСЯ КАК /etc/zshrc, НИ БЕЗ РЕДАКТИРОВАНИЯ!
+# РЕДАКТИРОВАНИЯ!
+#
+# Этот файл основан на идеях:
+# Майкла Прокопа: <http://www.michael-prokop.at/computer/config/.zshrc>
+# Marijan Peh...: <http://free-po.hinet.hr/MarijanPeh/files/zshrc>
+# Adam Spiers...: <http://adamspiers.org/computing/shells/>
+#
+# Протестировано и используется под {Net,Open}BSD, Slackware, Gentoo, Debian и LFS
+# с Zsh 4.0.7, 4.0.9, 4.1.1, 4.2.0. 4.2.1, 4.2.4, 4.2.5, 4.2.6 и
+# 5.0.0
+#
+# Оболочка для входа в систему? Если вы хотите узнать, вы можете набрать следующую команду, которая
+# ничего не сделает, если это оболочка входа, или предупредит вас, если нет.
+#--------------------------------------------------
+# if [[ ! -o login ]]; then
+# print "Warning: It is *not* a login-Shell\!"
+# fi
+#-------------------------------------------------- 
+
+# -f true, если файл существует и является обычным файлом. См.
+# | man zshmisc | less -p "^CONDITIONAL EXPRESSIONS"
+# для подробностей.
+
+#
+# Test and then source exported variables.
+if [ -f ~/.zsh/zshexports ]; then
+        source ~/.zsh/zshexports
+else
+        print "Note: ~/.zsh/zshexports is unavailable."
+fi
+
+# painless is my "what-happend-when" - box (for debugging and so on)
+if [ ${HOSTNAME} = painless ] && [ -e ~/.zsh/zshdevel ]; then
+	source ~/.zsh/zshdevel
+fi
+
+# Test and then source some options
+if [ -f ~/.zsh/zshoptions ]; then
+        source ~/.zsh/zshoptions
+else
+        print "Note: ~/.zsh/zshoptions is unavailable."
+fi
+
+# Test and then source alias definitions.
+if [ -f ~/.zsh/zshaliases ]; then
+        source ~/.zsh/zshaliases
+else
+        print "Note: ~/.zsh/zshaliases is unavailable."
+fi
+
+# Test and then source the functions.
+if [ -f ~/.zsh/zshfunctions ]; then
+        source ~/.zsh/zshfunctions
+else
+        print "Note: ~/.zsh/zshfunctions is unavailable."
+fi
+
+# Test and then source the lineeditor
+if [ -f ~/.zsh/zshzle ]; then
+        source ~/.zsh/zshzle
+else
+        print "Note: ~/.zsh/zshzle is unavailable."
+fi
+
+# Test and then source the keybindings
+if [ -f ~/.zsh/zshbindings ]; then
+        source ~/.zsh/zshbindings
+else
+        print "Note: ~/.zsh/zshbindings is not available."
+fi
+
+# Test and then source the completionsystem
+if [ -f ~/.zsh/zshcompctl ]; then
+        source ~/.zsh/zshcompctl
+else
+        print "Note: ~/.zsh/zshcompctl is unavailable."
+fi
+
+# Test and then source the zstyles
+if [ -f ~/.zsh/zshstyle ]; then
+        source ~/.zsh/zshstyle
+else
+        print "Note: ~/.zsh/zshstyle is unavailable."
+fi
+
+# Test and then source the wretched rest 
+if [ -f ~/.zsh/zshmisc ]; then
+        source ~/.zsh/zshmisc
+else
+        print "Note: ~/.zsh/zshmisc is unavailable."
+fi
+
+# http://www.unixreview.com/documents/s=9513/ur0501a/ur0501a.htm
+if [ -f ~/.zsh/zshkeep ]; then
+        source ~/.zsh/zshkeep
+else
+        print "Note: ~/.zsh/zshkeep is unavailable."
+fi

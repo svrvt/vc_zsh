@@ -1,0 +1,136 @@
+# ,----
+# | [dope@painless:~]% ulimit -a
+# | -t: время работы процессора (секунды) 2000
+# | -f: размер файла (блоки) 500000
+# | -d: размер сегмента данных (кбайт) 100000
+# | -s: размер стека (кбайт) 8192
+# | -c: размер файла ядра (блоки) 0
+# | -m: размер резидентного набора (кбайт) неограничен
+# | -u: процессы 1791
+# | -n: дескрипторы файлов 1024
+# | -l: размер заблокированной памяти (кбайт) 50000
+# | -v: адресное пространство (кбайт) неограниченно
+# | -N 10: блокировки файлов неограниченно
+# | [dope@painless:~]%
+# `----
+#
+# Примечание: Эти настройки *не* защищают от 'fork'-бомб типа
+# $ (){ :|:&};:
+# $ perl -e 'while(1){ fork();}'
+# но мне на это наплевать. Поверьте мне. Я знаю, что делаю. Смотрите
+# zshbuiltins(1) /ulimit для подробностей.
+ulimit -c unlimited
+ulimit -d unlimited
+ulimit -f unlimited
+ulimit -l unlimited
+ulimit -n unlimited
+ulimit -s unlimited
+ulimit -t unlimited
+
+# Массив (список, разделенный двоеточием), содержащий суффиксы файлов, которые будут
+# игнорироваться при завершении имени файла. Однако если завершение только
+# генерирует файлы с суффиксами из этого списка, то эти файлы будут
+# будут завершены в любом случае.
+# Примечание: U может использовать ``ls **/*~*(${~${(j/|/)fignore}})(.)'', чтобы перечислить все
+# простых файлов, не имеющих расширений, перечисленных в `fignore' или
+# ``rm **/*(${~${(j/|/)fignore}})(.)'' для удаления.
+fignore=( .part ,v .aux .toc .lot .lof .blg .bbl .bak .BAK .sav .old .o .trace .swp \~)
+
+# Установка аббревиатуры типа 'iab' с помощью Vim. ДА! Zsh _IS_ зло *hr*. I
+# используйте это вместо "глобальных псевдонимов".
+# $ Igr<Space>
+# будет расширен до
+# $ groff -s -p -t -e -Tlatin1 -mandoc
+typeset -A myiabs
+myiabs=(
+        "Im" "| more"
+        "Ia" "| awk"
+        "Ig" "| grep"
+        "Ieg" "| egrep"
+        "Iag" "| agrep"
+        "Igr" "groff -s -p -t -e -Tlatin1 -mandoc"
+        "Ip" "| $PAGER"
+        "Ih" "| head"
+        "Ik" "| keep"
+        "It" "| tail"
+        "Is" "| sort"
+        "Iv" "| $EDITOR"
+        "Iw" "| wc"
+        "Ix" "| xargs"
+)
+my-expand-abbrev() {
+    local MATCH
+    LBUFFER=${LBUFFER%%(#m)[_a-zA-Z0-9]#}
+    LBUFFER+=${myiabs[$MATCH]:-$MATCH}
+    zle self-insert
+}
+
+#--------------------------------------------------
+# Теперь в ~/.zsh/zshbindings
+# bindkey " " my-expand-abbrev 
+#-------------------------------------------------- 
+
+# Установите "umask" (см. "man umask"):
+# т.е. чтение и запись только для владельца.
+# umask 002 # relaxed -rwxrwxr-x
+# umask 022 # осторожно -rwxr-xr-x
+# umask 027 # осторожный -rwxr-x---
+# umask 077 # параноик -rwx------
+# umask 066 # bofh-like -rw-------
+umask 066
+
+# Если вы root, установите unmask на 022, чтобы предотвратить создание новых файлов, доступных для записи в группе и мире
+if (( EUID == 0 )); then
+    umask 022
+fi
+
+# fuck "dead.letter" *narf*
+if [ -e ~/dead.letter ]; then
+         mv ~/dead.letter ~/.dead_letter.`date +%Y%m%d-%R`
+fi
+
+#-------------------------------------------------- 
+# 'hash' часто посещаемые директории
+# Примечание: Это *не* переменные или алиасы!
+# ,----
+# | $ hash -d M=~/.mutt
+# | $ M
+# | ~/.mutt
+# | $ echo $M
+# |
+# | $ pwd
+# | | /home/ru/.mutt
+# | $ 
+# `----
+hash -d A=~/scripts/Asciidoc # самописная документация в формате asciidoc
+hash -d D=~/download/ # здесь находятся мои загрузки
+hash -d F=/usr/local/share/zsh/$ZSH_VERSION/functions # функции ZSH (OpenBSD)
+hash -d F=/usr/share/zsh/$ZSH_VERSION/functions/ # Функции ZSH (Slackware) 
+hash -d F=/usr/share/zsh-beta/functions/ # Функции ZSH (Debian)
+hash -d FD=~/.Documentations # полезные документы
+hash -d FF=/Sounds # MP3-файлы
+hash -d FS=/Backups # мои локальные резервные копии
+hash -d FP=/p0rn # фотографии, клипы, ...
+hash -d G=~/.getmail # Конфигурационные файлы для getmail
+hash -d HG=~/download/Source/Repos # HG/GIT/SVN/...- Repos
+hash -d HJ=~/.jed # $JED_ROOT (${HOME})
+hash -d I=~/.irssi/ # Файлы для Irssi
+hash -d J=/usr/local/jed/ # $JED_ROOT (измените его!)
+hash -d L=~/.slang/ # Файлы для Slrn
+hash -d M=~/.mutt/ # Файлы для Mutt
+hash -d Pi=/var/lib/mldonkey/incoming/files # полные файлы из mldonkey
+hash -d Pt=/var/lib/mldonkey/temp # временные файлы из mldonkey
+hash -d MF=~/.mailfilter # Конфигурационные файлы для mailfilter
+hash -d P=~/homepage/ # моя личная веб-страница
+hash -d RC=/etc/rc.d/ # выполняемые файлы из init (Slackware)
+hash -d RC=/etc/conf.d/ # Инит-файлы из init (Gentoo)
+hash -d RC=/etc/init.d/ # выполняемые файлы из init (Gentoo, Debian, ...)
+hash -d S=~/scripts/ # (Не)проверенные локальные хаки
+hash -d SO=~/download/Sources # Mutt, Slrn, Vim, ...
+hash -d T=~/download/Torrents # Bittorrent - это зло... не так ли?
+hash -d U=/usr/src/linux/ # Ядро Linux
+hash -d V=~/.vim/ # Файлы для Vim
+hash -d VL=/var/log # часто посещаемый ;)
+hash -d XL=~/.xchat2/xchatlogs/ # Иногда...
+hash -d Z=~/.zsh/ # "установочные файлы" для ZSH
+hash -d _S=~/.sigs/ # Моя коллекция подписей

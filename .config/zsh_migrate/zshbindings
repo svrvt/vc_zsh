@@ -1,0 +1,158 @@
+# To find out the keynames you can use
+#  | cat > /dev/null 
+#  or
+#  | od -c
+#
+# Some useful keybindings
+#  | $ xterm -version
+#  |   XFree86 4.3/OpenBSD 3.3(174)
+#  | $ echo $TERM
+#  |   xterm
+#
+#  bindkey "^Y"    yank                                # <STRG>-Y
+#  bindkey "\e[3~" delete-char                         # Delete
+#  bindkey '^[[7~' beginning-of-line                   # Home (xterm)
+#  bindkey '^[[8~'  end-of-line                        # End (xterm)
+#  bindkey '^[[5~'  history-beginning-search-backward  # Page Up
+#  bindkey '^[[6~'  history-beginning-search-forward   # Page Down
+#  bindkey '^[[2~' overwrite-mode                      # Insert
+#  bindkey "^[[A"  up-line-or-search                   # <ESC>-N
+#  bindkey "^[[B"  down-line-or-search                 # <ESC>-
+#  bindkey "^Q"  edit-command-line                     # <STRG>-Q
+#  bindkey " "     magic-space                         # ' ' (Space>
+#  bindkey "^B"    backward-word                       # <STRG>-B
+#  bindkey "^E"    expand-cmd-path                     # <STRG>-E
+#  bindkey "^N"    forward-word                        # <STRG>-N
+#  bindkey "^R"    history-incremental-search-backward # <STRG>-R
+#  bindkey "^P"    quote-line                          # <STRG>-P
+#  bindkey "^K"    run-help                            # <STRG>-K
+#  bindkey "^Z"    which-command                       # <STRG>-Z
+#  bindkey "^X"    what-cursor-position                # <STRG>-X
+#  bindkey -v
+# Keys.
+case "${TERM}" in
+    st|st-*)
+        bindkey "^[[H" beginning-of-line #Home key
+        bindkey "^[[4~" end-of-line #End key
+        bindkey "^[[P" delete-char #Del key
+        bindkey "^[[A" history-beginning-search-backward #Up Arrow
+        bindkey "^[[B" history-beginning-search-forward #Down Arrow
+        bindkey "^[[1;5C" forward-word # control + right arrow
+        bindkey "^[[1;5D" backward-word # control + left arrow
+        bindkey "^H" backward-kill-word # control + backspace
+        bindkey "^[[M" kill-word # control + delete
+    ;;
+    rxvt*|xterm*)
+        bindkey "^E" beginning-of-line #Home key
+        bindkey "^A" end-of-line #End key
+        bindkey "^[[3~" delete-char #Del key
+        bindkey "^[[A" history-beginning-search-backward #Up Arrow
+        bindkey "^[[B" history-beginning-search-forward #Down Arrow
+        bindkey "^[[1;5C" forward-word # control + right arrow
+        bindkey "^[[1;5D" backward-word # control + left arrow
+        bindkey "^H" backward-kill-word # control + backspace
+        bindkey "^[[3;5~" kill-word # control + delete
+        #plugins keys 
+        # bindkey '^[[1;5A' history-substring-search-up # control + up arrow
+        # bindkey '^[[1;5B' history-substring-search-down # control + down arrow
+    ;;
+
+    linux)
+        bindkey "^[[1~" beginning-of-line #Home key
+        bindkey "^[[4~" end-of-line #End key
+        bindkey "^[[3~" delete-char #Del key
+        bindkey "^[[A" history-beginning-search-backward
+        bindkey "^[[B" history-beginning-search-forward
+    ;;
+
+    screen|screen-*)
+        bindkey "^[[1~" beginning-of-line #Home key
+        bindkey "^[[4~" end-of-line #End key
+        bindkey "^[[3~" delete-char #Del key
+        bindkey "^[[A" history-beginning-search-backward #Up Arrow
+        bindkey "^[[B" history-beginning-search-forward #Down Arrow
+        bindkey "^[Oc" forward-word # control + right arrow
+        bindkey "^[OC" forward-word # control + right arrow
+        bindkey "^[Od" backward-word # control + left arrow
+        bindkey "^[OD" backward-word # control + left arrow
+        bindkey "^H" backward-kill-word # control + backspace
+        bindkey "^[[3^" kill-word # control + delete
+    ;;
+esac
+
+case $TERM in
+	xterm*)
+	# Pos1 && End
+	bindkey "^[[H" beginning-of-line
+	bindkey "^[[F" end-of-line
+	;;
+	screen*)
+	bindkey "^[[1~"  beginning-of-line
+	bindkey "^[[4~"  end-of-line
+	;;
+	linux*)
+	bindkey "^[[1~" beginning-of-line
+	bindkey "^[[4~" end-of-line
+	;;
+	rxvt*)
+	bindkey "^[[7~" beginning-of-line
+	bindkey "^[[8~" end-of-line
+	;;
+	Eterm*)
+	bindkey "^[[7~" beginning-of-line
+	bindkey "^[[8~" end-of-line
+	;;
+esac
+
+	bindkey "^[[2~" yank # Einfg
+	bindkey "^[[5~" up-line-or-history # PageUp
+	bindkey "^[[6~" down-line-or-history # PageDown
+	bindkey "^[e" expand-cmd-path # C-e для расширения пути введенной команды
+	bindkey "^[[A" up-line-or-search # стрелка вверх для поиска по истории
+	bindkey "^[[B" down-line-or-search # стрелка вниз для fwd-history-search
+	bindkey " " magic-space # развернуть историю по пробелу
+	bindkey -v # vi привязка клавиш
+	bindkey "\e[3~" delete-char # "Entf" или "Del"
+	bindkey "^[[A" history-search-backward # PgUp
+	bindkey "[B" history-search-forward # PgDown
+	bindkey "[C" forward-char # ->
+	bindkey "[D" backward-char # <-
+	bindkey "q" push-line # Убить *завершенную* строку! (ESC+q)
+	bindkey "^R" history-incremental-search-backward # Поиск в моем $HISTFILE (STRG+R)
+	bindkey '^Q' history-beginning-search-backward # 
+	bindkey '^F' history-beginning-search-forward #
+	bindkey "^[[2;5~" insert-last-word # STRG+Einfg
+	bindkey '^[[2' insert-last-word # STRG+Einfg
+	# bindkey "a" принятие и удержание # ESC+a
+	bindkey "^B" backward-word # На одно слово назад
+	bindkey "^X" forward-word # На одно слово вперед
+	bindkey "^P" quote-line # заключить в кавычки всю строку
+	bindkey "^K" run-help # т.е. "run-help foo" == "man foo"
+	bindkey -s "\C-t" "dirs -v\rcd ~"	# STRG+t
+	bindkey "^I" expand-or-complete # аналог "ls<TAB>"
+	bindkey "^E" expand-cmd-path # $ ls<STRG+E> == /bin/ls
+	bindkey " " my-expand-abbrev # См. ~/.zsh/zshmisc "/^myiabs" для деталей
+
+	# caphusos Tip
+	run-with-sudo () { LBUFFER="sudo $LBUFFER" }
+	zle -N run-with-sudo
+	bindkey '^N' run-with-sudo
+
+	# 2005-02-27: Навигация в меню завершения работы. GENIAL!
+	# <http://www.plenz.com/tmp/setup/zshrc>
+	# Навигация в списке завершения (tab-tab): hjkl выбирает, return вставляет
+	# и закрывает меню (при этом оно продолжает отображаться), а i вставляет и
+	# оставляет меню открытым для вставки другого завершения.
+	# Команды работают только *после* загрузки zsh/complist!
+	bindkey -M menuselect 'h' vi-backward-char                # links
+	bindkey -M menuselect 'j' vi-down-line-or-history         # unten
+	bindkey -M menuselect 'k' vi-up-line-or-history           # oben
+	bindkey -M menuselect 'l' vi-forward-char                 # rechts
+	# Вставляет завершение в командную строку, но оставляет меню
+	# меню открытым для дальнейшего завершения.
+	bindkey -M menuselect 'i' accept-and-menu-complete
+	# Вставляет завершение в командную строку, а затем отображает
+	# Меню с другими возможными завершениями. "Более узкий выбор
+	bindkey -M menuselect 'o' accept-and-infer-next-history
+#;;
+#esac

@@ -1,0 +1,22 @@
+# Отредактируйте командную строку с помощью вашего обычного редактора.
+  zle -N edit-command-line
+# Установка аббревиатуры типа 'iab' с помощью Vim
+  zle -N my-expand-abbrev
+# Необходим для моей "Vim-подобной строки состояния". 
+# См. ~/.zsh/zshstatusbar для подробностeq.
+#  zle -N redisplay
+#  zle -N redisplay2
+#  zle -N screenclear
+#  zle -N screenclearx
+#  zle -N vi-add-eol
+#  zle -N vi-add-next
+#  zle -N vi-change
+#  zle -N vi-change-eol
+#  zle -N vi-change-whole-line
+#  zle -N vi-insert
+#  zle -N vi-insert-bol
+#  zle -N vi-open-line-above
+#  zle -N vi-open-line-below
+#  zle -N vi-substitute
+#  zle -N vi-replace
+#  zle -N vi-cmd-mode

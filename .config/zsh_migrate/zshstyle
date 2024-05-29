@@ -1,0 +1,209 @@
+# 'zstyle' (Определяет заданный стиль для шаблона) 
+# Обычно код завершения не выдает имена каталогов
+# '.' и '.' в качестве возможных завершений. Если для этого стиля задано значение
+# 'true', он добавит и '.', и '..' в качестве возможных завершений; если он
+# установлено значение '...', будет добавлено только '...'.
+# zstyle ':completion:*' special-dirs ... # Fnord
+zstyle -e ':completion:*' special-dirs '[[ $PREFIX = (../)#(|.|..) ]] && reply=(...)'
+
+# Кэш
+# каталог кэша zsh
+function zrc_info {
+	print -P "%F{red}>>%F{default} $*"
+}
+
+#--------------------------------------------------
+# if [[ -d ~/var/cache/zsh ]] {
+# ZCACHEDIR=~/var/cache/zsh
+# } else {
+# zrc_info "~/var/cache/zsh не существует, вместо него используется ~/.zsh-cache"
+# mkdir -p ~/.zsh-cache
+# ZCACHEDIR=~/.zsh-cache
+# }
+# zstyle ':completion:*' cache-path $ZCACHEDIR
+#-------------------------------------------------- 
+zstyle ':completion:*' use-cache true
+#--------------------------------------------------
+# zstyle ':completion::complete:*' use-cache 1
+# compinit -C -d $ZCACHEDIR/compdump
+#-------------------------------------------------- 
+
+# Таким образом вы указываете zsh comp, что первая часть пути должна быть
+# точной, и избегать частичных глобусов. Теперь завершение пути стало почти
+# немедленным.
+zstyle ':completion:*' accept-exact '*(N)'
+
+# выделять совпадающую часть доступных завершений
+autoload -U colors ; colors
+zstyle ':completion:*' list-colors 'reply=( "=(#b)(*$PREFIX)(?)*=00=$color[green]=$color[bg-green]" )'
+
+# $ man write<TAB>
+# страница руководства, раздел 1:
+# write
+# страница руководства, раздел 1p:
+# write
+# ...
+# Это зло. Не правда ли?!
+zstyle ':completion:*:manuals' separate-sections true
+
+# удалять слеш, если аргумент является каталогом
+zstyle ':completion:*' squeeze-slashes true
+
+# история
+zstyle ':completion:*:history-words' stop yes
+zstyle ':completion:*:history-words' remove-all-dups yes
+zstyle ':completion:*:history-words' list false
+zstyle ':completion:*:history-words' menu yes
+
+
+# добавить цвета к завершению
+# общее завершение
+#--------------------------------------------------
+ zstyle ':completion:*:descriptions' format $'%{\e[0;31m%}завершение %B%d%b%{\e[0m%}'
+#-------------------------------------------------- 
+#--------------------------------------------------
+# zstyle ':completion:*:corrections' format $'%{\e[0;32m%}%d (errors: %e)%}'
+#-------------------------------------------------- 
+zstyle ':completion:*:messages' format '%d'
+#--------------------------------------------------
+ zstyle ':completion:*:warnings' format $'%{\e[0;31m%}Нет совпадений для:%{\e[0m%} %d'
+#-------------------------------------------------- 
+#--------------------------------------------------
+# zstyle ':completion:*:corrections' format '%B%d (errors: %e)%b'
+# zstyle ':completion:*' format 'completing %d'
+#-------------------------------------------------- 
+#--------------------------------------------------
+ zstyle ':completion:*' format $'%{\e[0;31m%}завершение %B%d%b%{\e[0m%}'
+#-------------------------------------------------- 
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*' verbose yes
+
+# cd directory stack menu
+zstyle ':completion:*:*:cd:*:directory-stack' menu yes select
+
+# аппроксимация
+zstyle ':completion:*' completer _complete _match _approximate
+zstyle ':completion:*:match:*' только оригинал
+zstyle -e ':completion:*:approximate:*' max-errors 'reply=( $(( ($#PREFIX+$#SUFFIX)/3 )) numeric )'
+
+# сортировка элементов завершения массива
+zstyle ':completion:*:*:-subscript-:*' tag-order indexes parameters
+
+# ?
+zstyle ':completion::*:(-command-|export):*' fake-parameters ${${${_comps[(I)-value-*]#*,}%%,*}:#-*-}
+zstyle ':completion:*:-tilde-:*' group-order 'named-directories' 'path-directories' 'users' 'expand'
+
+# игнорировать функции завершения для команд, которых у вас нет
+ zstyle ':completion:*:functions' ignored-patterns '(_*|pre(cmd|exec))'
+
+
+  zstyle ':completion:*' select-prompt %SSПрокрутка активна: текущий выбор в %P Строки: %m
+  zstyle ':completion:*:corrections' format $'%{\e[0;31m%}%d (ошибки: %e)%}'
+  zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+# хосты (фон = красный, передний план = черный)
+  zstyle ':completion:*:*:*:*:hosts' list-colors '=*=30;41'
+# имена пользователей (фон = белый, передний план = синий)
+  zstyle ':completion:*:*:*:*:users' list-colors '=*=34;47'
+# Если загружен модуль zsh/complist, этот стиль можно использовать для установки
+# спецификации цветов. Этот механизм заменяет использование
+# параметров ZLS_COLORS и ZLS_COLOURS.
+# PIDs (жирный красный)
+  zstyle ':completion:*:processes' command ps --forest -A -o pid,cmd
+  zstyle ':completion:*:processes' list-colors '=(#b)( #[0-9]#)[^[/0-9a-zA-Z]#(*)=34=37;1=30;1'
+  #zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
+  zstyle ':completion:*:(killall|pkill|kill):*' menu yes select
+  zstyle ':completion:*:(killall|pkill|kill):*' force-list always
+
+
+# I'm bonelazy ;) Заполните хосты и - не в последнюю очередь - удаленные
+# директории. Попробуйте:
+# $ scp file username@<TAB><TAB>:/<TAB>
+zstyle ':completion:*:(ssh|scp|ftp):*' hosts $hosts
+zstyle ':completion:*:(ssh|scp|ftp):*' users $users
+
+
+# Не очень нужно.
+# $ cd <TAB>
+# Дополните локальный каталог
+# <список существующих директорий>
+# zstyle ':completion:*' format 'Komplettiere %d'
+
+
+# Не завершать файлы резервных копий как исполняемые файлы
+zstyle ':completion:*:complete:-command-::commands' ignored-patterns '*\~'
+
+
+# определяет, в каком порядке имена (файлы) должны быть
+# перечислены и завершены при использовании завершения меню.
+# `size' для сортировки по размеру файла
+# `links' для сортировки по количеству ссылок на файл
+# ``модификация'' или ``время'' или ``дата'' для сортировки по времени последней модификации
+# `access' для сортировки по времени последнего доступа
+# `inode` или `change` для сортировки по времени последнего изменения inode
+# `reverse' для сортировки в порядке убывания
+# Если стиль установлен в любое другое значение или не установлен, файлы будут
+# отсортированы в алфавитном порядке по имени.
+zstyle ':completion:*' file-sort name
+
+
+# сколько завершений включает выбор меню
+# используйте 'long' для запуска меню compl. если список больше экрана
+# или некоторое число для запуска меню, если список содержит это число
+# завершений (или больше).
+zstyle ':completion:*' menu select=long
+
+
+# Если в списке более 5 вариантов, разрешить выбор из меню со
+# стрелками (завершение не зависит от регистра!).
+zstyle ':completion:*-case' menu select=5
+
+
+# Не завершать файлы резервных копий как исполняемые файлы
+zstyle ':completion:*:complete:-command-::commands' ignored-patterns '*\~'
+
+
+# суффиксы имен файлов, которые следует игнорировать при завершении (кроме как после команды rm
+# команды)
+zstyle ':completion:*:*:(^rm):*:*files' ignored-patterns '*?(o|c~|old|pro|zwc)' '*~'
+
+
+# Формат сообщений/предупреждений
+zstyle ':completion:*:messages' format $'%{\e[0;31m%}%d%{\e[0m%}'
+zstyle ':completion:*:warnings' format $'%{\e[0;31m%}Нет совпадений для: %d%{\e[0m%}'
+#--------------------------------------------------
+# zstyle ':completion:*:corrections' format $'%{[0;31m%}%d (errors: %e)%{[0m%}'
+#-------------------------------------------------- 
+zstyle ':completion:*' group-name ''
+
+
+# завершения для некоторых прог, не входящих в систему завершения по умолчанию
+zstyle ':completion:*:*:mpg123:*' file-patterns '*.(mp3|MP3):mp3\ files *(-/):directories'
+zstyle ':completion:*:*:ogg123:*' file-patterns '*.(ogg|OGG):ogg\ files *(-/):directories'
+
+
+# Запретить завершение файлов/каталогов CVS
+zstyle ':completion:*:(all-|)files' ignored-patterns '(|*/)CVS'
+zstyle ':completion:*:cd:*' ignored-patterns '(*/)#CVS'
+
+
+# Игнорируйте функции завершения для команд, которых у вас нет:
+zstyle ':completion:*:functions' ignored-patterns '_*'
+
+
+# допускать одну ошибку за каждые три набранных символа примерно
+# дополняющий
+zstyle ':completion:::::' completer _complete _approximate
+zstyle ':completion:*:approximate:*' max-errors 2
+#--------------------------------------------------
+ zstyle -e ':completion:*:approximate:*' max-errors 'reply=( $((($#PREFIX+$#SUFFIX)/3 )) numeric )'
+#-------------------------------------------------- 
+
+
+# предложение индексов перед параметрами в подскриптах
+zstyle ':completion:*:*:-subscript-:*' tag-order indexes parameters
+
+
+# вставить все расширения для расширенного дополнения
+zstyle ':completion:*:expand:*' tag-order all-expansions
+
+
