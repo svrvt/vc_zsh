@@ -124,16 +124,25 @@ export NPM_CONFIG_CACHE=$XDG_CACHE_HOME/npm
 GIT_HOME=$HOME/aggregate
 export GIT_HOME
 
-my_repo=("inst" "shell" "run" "net" "paenlare")
-for r in "${my_repo[@]}"; do
-	[[ -d "$GIT_HOME/re_$r" ]] && eval DOT_"$r"="$GIT_HOME/re_$r" && export DOT_"$r"
-	if [ -d "$GIT_HOME/re_$r"/bin ]; then
-		eval BIN_"$r"="$GIT_HOME/re_$r/bin" && export BIN_"$r"
-		# for d in $(command du "\$BIN_$r" | cut -f2); do   # "\$BIN_$r" a not visible after eval?
-		for d in $(command find "$GIT_HOME/re_$r/bin" -maxdepth 1 -type d); do
-			appendToPath "$d"
-		done
-	fi
+# my_repo=("inst" "shell" "run" "net" "paenlare")
+# for r in "${my_repo[@]}"; do
+# 	[[ -d "$GIT_HOME/re_$r" ]] && eval DOT_"$r"="$GIT_HOME/re_$r" && export DOT_"$r"
+# 	if [ -d "$GIT_HOME/re_$r"/bin ]; then
+# 		eval BIN_"$r"="$GIT_HOME/re_$r/bin" && export BIN_"$r"
+# 		# for d in $(command du "\$BIN_$r" | cut -f2); do   # "\$BIN_$r" a not visible after eval?
+# 		for d in $(command find "$GIT_HOME/re_$r/bin" -maxdepth 1 -type d); do
+# 			appendToPath "$d"
+# 		done
+# 	fi
+# done
+
+BIN_HOME=$HOME/bin
+export BIN_HOME
+# bin_dirs=("rofi" "net")
+# for d in "${bin_dirs[@]}"; do
+# 	[[ -d "$BIN_HOME/$d" ]] && eval BIN_"$d"="$BIN_HOME/$d" && export BIN_"$d" && appendToPath BIN_"$d"
+for d in $(command find "$BIN_HOME" -maxdepth 1 -type d); do
+	appendToPath "$d"
 done
 
 # Adds ~/.local/bin and subfolders to $PATH
