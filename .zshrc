@@ -66,6 +66,8 @@ setopt pushd_ignore_dups                    ## Удалить повторяющ
 setopt pushd_minus                          ## oтменяет +/- операторы.
 bindkey -s "q\t" "cd -\t"                   ## q<tab> - for open dirstack
 
+fpath=(~/.local/share/zsh/vendor-completions $fpath)
+
 # Completion.
 autoload -Uz compinit
 compinit
@@ -128,5 +130,4 @@ bindkey "^S" history-incremental-pattern-search-forward
 #   esac
 # fi
 
-# fpath=(/home/ru/.local/share/zsh/plugins/zsh-completions/src $fpath)
 

@@ -351,13 +351,13 @@ alias logs="sudo find /var/log -type f -exec file {} \; | grep 'text' | cut -d' 
 # alias nvim-lazyman="NVIM_APPNAME=nvim-Lazyman nvim"
 #alias v="NVIM_APPNAME=nvim nvim"
 
-alias sr='surfraw -t'
-alias surfraw='surfraw -g'
+alias sr="SURFRAW_graphical=no sr"
+alias srg="surfraw -g"
 
-alias rcp='rsync -v --progress'
-alias rmv='rsync -v --progress --remove-source-files'
-alias chmod="chmod -c"
-alias chown="chown -c"
+# alias rcp='rsync -v --progress'
+# alias rmv='rsync -v --progress --remove-source-files'
+# alias chmod="chmod -c"
+# alias chown="chown -c"
 
 
 if command -v diff-so-fancy >/dev/null 2>&1; then

@@ -523,6 +523,8 @@ fzf_select_file() {
 }
 
 path() { sed 's/:/\n/g' <<< $PATH; }
+fpath() { sed 's/ /\n/g' <<< $fpath; }
+
 
 ew() {
 	$EDITOR "$(which "$1")"
