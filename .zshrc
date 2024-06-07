@@ -116,18 +116,7 @@ bindkey -s "^n" "navi\n"
 bindkey "^R" history-incremental-pattern-search-backward 
 bindkey "^S" history-incremental-pattern-search-forward
 
-# if [ $SHELL = "/usr/bin/zsh" ] && ! grep -q "emulate sh -c 'source /etc/profile'" /etc/zsh/zprofile /etc/zsh/zlogin; then
-#   echo -e "/etc/profile.d/* don't soursed"
-#   echo -e "press 'y' for fix it"
-#   read -r ask
-#   case $ask in
-#     y)
-#     echo "emulate sh -c 'source /etc/profile'" | sudo tee /etc/zsh/zprofile
-#     echo -e "emulate sh -c 'source /etc/profile' added to /etc/zsh/zprofile"
-#     echo -e "reboot or"
-#     echo "for i in /etc/profile.d/*.sh; do if [ -r \$i ]; then . \$i; fi; done"
-#     ;;
-#   esac
-# fi
 
-
+# Hishtory Config:
+# export PATH="$PATH:/home/ru/.hishtory"
+# source /home/ru/.hishtory/config.zsh

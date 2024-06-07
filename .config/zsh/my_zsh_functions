@@ -107,3 +107,4 @@ _open_new_terminal_here(){
 zle -N _open_new_terminal_here
 bindkey "^K" _open_new_terminal_here
 
+# vim: ft=zsh syntax=sh
