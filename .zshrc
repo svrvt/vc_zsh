@@ -1,3 +1,8 @@
+if [ -n "${ZSH_DEBUGRC+1}" ]; then
+    zmodload zsh/zprof
+fi
+
+
 # .zshrc
 # Author: Piotr Karbowski <piotr.karbowski@gmail.com>
 # License: beerware.
@@ -34,9 +39,26 @@ ZSHDDIR="${HOME}/.config/zsh"
 zsh_sourses=("aliases" "prompt")
 
 if [[ -o interactive ]]; then
+
   for m in "${zsh_sourses[@]}"; do
     [[ -f "$ZSHDDIR/$m" ]] && source "$ZSHDDIR/$m"
   done
+
+  #plugins
+  if (( $+commands[sheldon] )); then
+     eval "$(sheldon --config-file $XDG_CONFIG_HOME/sheldon/plugins-zsh.toml source)"
+  fi
+
+  if (( $+commands[atuin] )); then
+    eval "$(atuin init zsh)"
+  fi
+
+  if (( $+commands[navi] )); then
+    eval "$(navi widget zsh)"
+  fi
+  bindkey -s "^n" "navi\n"
+
+
 fi
 
 # (switch to Emacs mode)
@@ -49,9 +71,11 @@ if [[ -f $DIRSTACKFILE ]] && [[ $#dirstack -eq 0 ]]; then
   dirstack=( ${(f)"$(< $DIRSTACKFILE)"} )
   [[ -d $dirstack[1] ]] && cd $dirstack[1]
 fi
+
 chpwd() {
   print -l $PWD ${(u)dirstack} >$DIRSTACKFILE
 }
+
 DIRSTACKSIZE=20
 setopt auto_pushd pushdsilent pushdtohome   ## Сохр. истории `cd` в `pushd` и обеспечение работы `cd -<TAB>`
 setopt pushd_ignore_dups                    ## Удалить повторяющиеся записи
@@ -89,21 +113,6 @@ autoload -U edit-command-line
 zle -N edit-command-line
 bindkey '^x^e' edit-command-line
 
-#plugins
-if (( $+commands[sheldon] )); then              # только для zsh
-   eval "$(sheldon --config-file $XDG_CONFIG_HOME/sheldon/plugins-zsh.toml source)"
-fi
-
-if (( $+commands[atuin] )); then
-  eval "$(atuin init zsh)"
-fi
-
-if (( $+commands[navi] )); then
-  eval "$(navi widget zsh)"
-fi
-
-bindkey -s "^n" "navi\n"
-
 #принимает несколько слов или их частей (слово*ово)  
 bindkey "^R" history-incremental-pattern-search-backward 
 bindkey "^S" history-incremental-pattern-search-forward
@@ -112,3 +121,11 @@ bindkey "^S" history-incremental-pattern-search-forward
 # Hishtory Config:
 # export PATH="$PATH:/home/ru/.hishtory"
 # source /home/ru/.hishtory/config.zsh
+
+# rest of .zshrc script
+
+alias zt="time ZSH_DEBUGRC=1 zsh -i -c exit"
+
+if [ -n "${ZSH_DEBUGRC+1}" ]; then
+    zprof
+fi

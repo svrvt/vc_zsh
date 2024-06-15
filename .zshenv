@@ -1,5 +1,9 @@
 # awesome-client "local naughty=require('naughty'); require('awful').spawn.easy_async('env', function(out) naughty.notify({title="ENV", text=out})end)"
 
+#speed up load time
+skip_global_compinit=1
+
+
 # export XDG_CURRENT_DESKTOP="KDE"
 
 export XDG_CONFIG_HOME="$HOME/.config"

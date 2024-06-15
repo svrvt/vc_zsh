@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # {{{ A check for the existence of a directory.
 
 dirExists() {
@@ -24,7 +22,8 @@ hostName() {
 # {{{ A check for the existence of a program on my path.
 
 programExists() {
-	which "$1" &>/dev/null
+	# which "$1" &>/dev/null
+  (( $+commands[$1] ))
 }
 
 # -------------------------------------------------------------------------- }}}
@@ -129,20 +128,20 @@ pdf() {
 ex() {
 	if [ -f "$1" ]; then
 		case "$1" in
-		*.tar.bz2) tar xjf "$1" ;;
-		*.tar.gz) tar xzf "$1" ;;
-		*.bz2) bunzip2 "$1" ;;
-		*.rar) unrar x "$1" ;;
-		*.gz) gunzip "$1" ;;
-		*.tar) tar xf "$1" ;;
-		*.tbz2) tar xjf "$1" ;;
-		*.tgz) tar xzf "$1" ;;
-		*.zip) unzip "$1" ;;
-		*.Z) uncompress "$1" ;;
-		*.7z) 7z x "$1" ;;
-		*deb) ar x "$1" ;;
-		*.tar.xz) tar xf "$1" ;;
-		*.tar.zst) unzstd "$1" ;;
+		*.tar.bz2)  tar xjf "$1" ;;
+		*.tar.gz)   tar xzf "$1" ;;
+		*.bz2)      bunzip2 "$1" ;;
+		*.rar)      unrar x "$1" ;;
+		*.gz)       gunzip "$1" ;;
+		*.tar)      tar xf "$1" ;;
+		*.tbz2)     tar xjf "$1" ;;
+		*.tgz)      tar xzf "$1" ;;
+		*.zip)      unzip "$1" ;;
+		*.Z)        uncompress "$1" ;;
+		*.7z)       7z x "$1" ;;
+		*deb)       ar x "$1" ;;
+		*.tar.xz)   tar xf "$1" ;;
+		*.tar.zst)  unzstd "$1" ;;
 		*) echo "'$1' cannot be extracted via ex()" ;;
 		esac
 	else
@@ -150,6 +149,29 @@ ex() {
 	fi
 }
 
+# Extracts any archive(s) (if unp isn't installed)
+extract() {
+	for archive in "$@"; do
+		if [ -f "$archive" ]; then
+			case $archive in
+			*.tar.bz2)  tar xvjf $archive ;;
+			*.tar.gz)   tar xvzf $archive ;;
+			*.bz2)      bunzip2 $archive ;;
+			*.rar)      rar x $archive ;;
+			*.gz)       gunzip $archive ;;
+			*.tar)      tar xvf $archive ;;
+			*.tbz2)     tar xvjf $archive ;;
+      *.tgz)      tar xvzf $archive ;;
+			*.zip)      unzip $archive ;;
+			*.Z)        uncompress $archive ;;
+			*.7z)       7z x $archive ;;
+			*) echo "don't know how to extract '$archive'..." ;;
+			esac
+		else
+			echo "'$archive' is not a valid file!"
+		fi
+	done
+}
 # -------------------------------------------------------------------------- }}}
 
 # man() {
@@ -176,11 +198,13 @@ ex() {
 # export LESS_TERMCAP_us=$'\E[01;32m'
 
 # Only show files which have $1 present in contents
-fz() {
-	local line
-	line=$(rg "$1" | fzf) &&
-		$EDITOR $(cut -d':' -f1 <<<"$line") +$(cut -d':' -f2 <<<"$line")
-}
+# FIX:hilight
+# fz() {
+# 	local line
+# 	line=$(rg "$1" | fzf -m --height=20) &&
+# 		# $EDITOR $(cut -d':' -f1 <<<"$line") +$(cut -d':' -f2 <<<"$line")
+# 		$EDITOR $(cut -d':' -f1 <<< $line)
+# }
 
 todos() {
 	cd "$NOTES_ROOT" || return
@@ -218,6 +242,7 @@ edit() {
 		pico "$@"
 	fi
 }
+
 sv() {
 	if [ "$(type -t nvim)" = "file" ]; then
 		sudo -Es nvim "$@"
@@ -228,29 +253,6 @@ sv() {
 	fi
 }
 
-# Extracts any archive(s) (if unp isn't installed)
-extract() {
-	for archive in "$@"; do
-		if [ -f "$archive" ]; then
-			case $archive in
-			*.tar.bz2) tar xvjf $"archeve" ;;
-			*.tar.gz) tar xvzf $"archeve" ;;
-			*.bz2) bunzip2 $"archeve" ;;
-			*.rar) rar x $"archeve" ;;
-			*.gz) gunzip $"archeve" ;;
-			*.tar) tar xvf $"archeve" ;;
-			*.tbz2) tar xvjf $"archeve" ;;
-			*.tgz) tar xvzf $"archeve" ;;
-			*.zip) unzip $"archeve" ;;
-			*.Z) uncompress $"archeve" ;;
-			*.7z) 7z x $"archeve" ;;
-			*) echo "don't know how to extract '$archive'..." ;;
-			esac
-		else
-			echo "'$archive' is not a valid file!"
-		fi
-	done
-}
 
 # Searches for text in all files in the current folder
 ftext() {
@@ -360,7 +362,7 @@ netinfo() {
 }
 
 # IP address lookup
-function whatismyip() {
+whatismyip() {
 	check_adapters
 	echo "--------------- Network Information ---------------"
 	for m in "${adapters[@]}"; do
@@ -523,6 +525,7 @@ fzf_select_file() {
 }
 
 path() { sed 's/:/\n/g' <<< $PATH; }
+# FIX:hilight
 fpath() { sed 's/ /\n/g' <<< $fpath; }
 
 
@@ -531,3 +534,4 @@ ew() {
 }
 bindkey -s "e\t" "$EDITOR $(which !!)^M"
 
+# vim: ft=zsh syntax=sh
