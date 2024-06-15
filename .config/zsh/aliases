@@ -187,8 +187,8 @@ alias rbe='eval "$(rbenv init - n)"'
 # -------------------------------------------------------------------------- }}}
 # {{{ Aliases to folders I visit frequently.
 
-alias .c='cd $HOME/Documents'
-alias .d='cd $HOME/Downloads'
+alias .p='cd $HOME/paperwork'
+alias .d='cd $HOME/downloads'
 
 alias .al='cd $XDG_CONFIG_HOME/alacritty'
 alias .aw='cd $XDG_CONFIG_HOME/awesome'
@@ -204,13 +204,13 @@ alias ,ev='$EDITOR $HOME/.vimrc'
 alias ,mb='$EDITOR $HOME/.bashrc'
 # alias ,mbp='$EDITOR /my_bash_prompt'
 
-alias ,ma='$EDITOR $ZSHDDIR/my_aliases'
-alias ,mc='$EDITOR $ZSHDDIR/my_completions'
-alias ,me='$EDITOR $ZSHDDIR/my_exports_and_paths'
-alias ,mep='$EDITOR $ZSHDDIR/my_export_private'
-alias ,mf='$EDITOR $ZSHDDIR/my_functions'
-alias ,mzf='$EDITOR $ZSHDDIR/my_functions'
-alias ,mzp='$EDITOR $ZSHDDIR/my_zsh_prompt'
+alias ,ma='$EDITOR $ZSHDDIR/aliases'
+alias ,mc='$EDITOR $ZSHDDIR/completions'
+alias ,me='$EDITOR $ZSHDDIR/exports'
+alias ,mep='$EDITOR $ZSHDDIR/export.private'
+alias ,mf='$EDITOR $ZSHDDIR/functions'
+alias ,mzf='$EDITOR $ZSHDDIR/zsh_functions'
+alias ,mzp='$EDITOR $ZSHDDIR/prompt'
 
 alias ,mz='$EDITOR $HOME/.zshrc'
 
@@ -254,9 +254,9 @@ alias pp="prettyping --nolegend"
 alias rm="rm -irv"
 alias rmf="rm -rf"
 
-alias scr="scrot -cd 3 -F ~/Pictures/Screenshots/snap-%Y-%m-%d.png"
-alias scrw="scrot -u -bcd 3 -F ~/Pictures/Screenshots/snap-%Y-%m-%d.png"
-alias scrs="scrot -s -l width=3,color='#1688f0',mode=edge,opacity=90 -F ~/Pictures/Screenshots/snap-%Y-%m-%d.png"
+alias scr="scrot -cd 3 -F ~/records/screen/snap-%Y-%m-%d.png"
+alias scrw="scrot -u -bcd 3 -F ~/records/screen/snap-%Y-%m-%d.png"
+alias scrs="scrot -s -l width=3,color='#1688f0',mode=edge,opacity=90 -F ~/records/screen/snap-%Y-%m-%d.png"
 
 alias sysd="sudo systemctl disable"
 alias syse="sudo systemctl enable"
@@ -375,4 +375,4 @@ fi
 
 alias root="sudo -E -s"
 
-alias sp="source $ZSHDDIR/my_export_private"
+alias sp="source $ZSHDDIR/export.private"

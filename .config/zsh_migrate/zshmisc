@@ -84,11 +84,6 @@ if (( EUID == 0 )); then
     umask 022
 fi
 
-# fuck "dead.letter" *narf*
-if [ -e ~/dead.letter ]; then
-         mv ~/dead.letter ~/.dead_letter.`date +%Y%m%d-%R`
-fi
-
 #-------------------------------------------------- 
 # 'hash' часто посещаемые директории
 # Примечание: Это *не* переменные или алиасы!
@@ -102,35 +97,20 @@ fi
 # | | /home/ru/.mutt
 # | $ 
 # `----
-hash -d A=~/scripts/Asciidoc # самописная документация в формате asciidoc
-hash -d D=~/download/ # здесь находятся мои загрузки
-hash -d F=/usr/local/share/zsh/$ZSH_VERSION/functions # функции ZSH (OpenBSD)
-hash -d F=/usr/share/zsh/$ZSH_VERSION/functions/ # Функции ZSH (Slackware) 
-hash -d F=/usr/share/zsh-beta/functions/ # Функции ZSH (Debian)
-hash -d FD=~/.Documentations # полезные документы
-hash -d FF=/Sounds # MP3-файлы
-hash -d FS=/Backups # мои локальные резервные копии
-hash -d FP=/p0rn # фотографии, клипы, ...
+hash -d A=~/ansible
+hash -d D=~/downloads/ # здесь находятся мои загрузки
+hash -d F=/usr/share/zsh/functions/ # Функции ZSH
+hash -d FD=~/.documentations # полезные документы
 hash -d G=~/.getmail # Конфигурационные файлы для getmail
-hash -d HG=~/download/Source/Repos # HG/GIT/SVN/...- Repos
-hash -d HJ=~/.jed # $JED_ROOT (${HOME})
+hash -d GH=~/src/github.com 
 hash -d I=~/.irssi/ # Файлы для Irssi
-hash -d J=/usr/local/jed/ # $JED_ROOT (измените его!)
-hash -d L=~/.slang/ # Файлы для Slrn
 hash -d M=~/.mutt/ # Файлы для Mutt
-hash -d Pi=/var/lib/mldonkey/incoming/files # полные файлы из mldonkey
-hash -d Pt=/var/lib/mldonkey/temp # временные файлы из mldonkey
 hash -d MF=~/.mailfilter # Конфигурационные файлы для mailfilter
-hash -d P=~/homepage/ # моя личная веб-страница
-hash -d RC=/etc/rc.d/ # выполняемые файлы из init (Slackware)
-hash -d RC=/etc/conf.d/ # Инит-файлы из init (Gentoo)
+# hash -d RC=/etc/rc.d/ # выполняемые файлы из init (Slackware)
 hash -d RC=/etc/init.d/ # выполняемые файлы из init (Gentoo, Debian, ...)
-hash -d S=~/scripts/ # (Не)проверенные локальные хаки
-hash -d SO=~/download/Sources # Mutt, Slrn, Vim, ...
-hash -d T=~/download/Torrents # Bittorrent - это зло... не так ли?
-hash -d U=/usr/src/linux/ # Ядро Linux
-hash -d V=~/.vim/ # Файлы для Vim
+hash -d B=~/bin/ # (Не)проверенные локальные хаки
+hash -d SB=~/src/build # Mutt, Slrn, Vim, ...
+hash -d V=~/.config/nvim/ # Файлы для Vim
 hash -d VL=/var/log # часто посещаемый ;)
-hash -d XL=~/.xchat2/xchatlogs/ # Иногда...
-hash -d Z=~/.zsh/ # "установочные файлы" для ZSH
+hash -d Z=~/.config/zsh/ # "установочные файлы" для ZSH
 hash -d _S=~/.sigs/ # Моя коллекция подписей

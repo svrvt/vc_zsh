@@ -5,7 +5,6 @@ PASSWORD_STORE_DIR=~/.password-store
 if which pass &>/dev/null; then
 	if [ -n "$(command ls -A $PASSWORD_STORE_DIR)" ]; then
 #
-#
 		if which gh &>/dev/null; then
 			export GITHUB_TOKEN="$(pass system/github_token)"
 		fi

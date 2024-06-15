@@ -138,3 +138,6 @@ case $USER in
 
     ;;
 esac
+
+# vim: ft=zsh syntax=sh
+

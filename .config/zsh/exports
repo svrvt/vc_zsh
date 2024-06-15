@@ -26,18 +26,14 @@ export TERMINAL="alacritty"
 # export BROWSER="firefox"
 
 # cleaning up home folder
-export XDG_CONFIG_HOME="$HOME/.config"
-export XDG_DATA_HOME="$HOME/.local/share"
-export XDG_STATE_HOME="$HOME/.local/state"
-export XDG_CACHE_HOME="$HOME/.cache"
-
 export GNUPGHOME="$XDG_DATA_HOME/gnupg"
+
+export JUPYTER_CONFIG_DIR="$XDG_CONFIG_HOME/jupyter"
 
 # export GTK2_RC_FILES="$XDG_CONFIG_HOME"/gtk-2.0/gtkrc
 # export JULIA_DEPOT_PATH="$XDG_DATA_HOME/julia:$JULIA_DEPOT_PATH"
 # export NODE_REPL_HISTORY="$XDG_DATA_HOME"/node_repl_history
 
-export JUPYTER_CONFIG_DIR="$XDG_CONFIG_HOME/jupyter"
 
 ###
 prependToPath "$HOME"/.local/bin
@@ -121,37 +117,17 @@ export NVM_DIR=${XDG_DATA_HOME:-$HOME/.local/share}/nvm
 export NPM_CONFIG_USERCONFIG=$XDG_CONFIG_HOME/npm/npmrc
 export NPM_CONFIG_CACHE=$XDG_CACHE_HOME/npm
 
-GIT_HOME=$HOME/aggregate
-export GIT_HOME
-
-# my_repo=("inst" "shell" "run" "net" "paenlare")
-# for r in "${my_repo[@]}"; do
-# 	[[ -d "$GIT_HOME/re_$r" ]] && eval DOT_"$r"="$GIT_HOME/re_$r" && export DOT_"$r"
-# 	if [ -d "$GIT_HOME/re_$r"/bin ]; then
-# 		eval BIN_"$r"="$GIT_HOME/re_$r/bin" && export BIN_"$r"
-# 		# for d in $(command du "\$BIN_$r" | cut -f2); do   # "\$BIN_$r" a not visible after eval?
-# 		for d in $(command find "$GIT_HOME/re_$r/bin" -maxdepth 1 -type d); do
-# 			appendToPath "$d"
-# 		done
-# 	fi
-# done
-
 BIN_HOME=$HOME/bin
 export BIN_HOME
 # bin_dirs=("rofi" "net")
 # for d in "${bin_dirs[@]}"; do
 # 	[[ -d "$BIN_HOME/$d" ]] && eval BIN_"$d"="$BIN_HOME/$d" && export BIN_"$d" && appendToPath BIN_"$d"
-for d in $(command find "$BIN_HOME" -maxdepth 1 -type d); do
+for d in $(find "$BIN_HOME" -maxdepth 1 -type d); do
 	appendToPath "$d"
 done
 
 # Adds ~/.local/bin and subfolders to $PATH
 # export PATH="$PATH:${$(find ~/.local/bin -maxdepth 1 -type d -printf %p:)%%:}"
-
-# export NOTMUCH_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/notmuch-config"
-# export WGETRC="${XDG_CONFIG_HOME:-$HOME/.config}/wget/wgetrc"
-# export PASSWORD_STORE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/password-store"
-# export ZDOTDIR="$HOME/.config/zsh"
 
 export MANPAGER="less -R --use-color -Dd+r -Du+b"
 
@@ -180,19 +156,6 @@ export LANGUAGE=ru_RU.UTF-8
 
 # {{{ History and path
 
-export HISTCONTROL=ignoreboth:erasedups
-# Don't put duplicate lines in the history and do not add lines that start with a space
-# export HISTCONTROL=erasedups:ignoredups:ignorespace
-
-# XDG Paths
-export XDG_CONFIG_HOME=$HOME/.config
-export XDG_CACHE_HOME=$HOME/.cache
-export XDG_DATA_HOME=$HOME/.local/share
-
-# To have colors for ls and all grep commands such as grep, egrep and zgrep
-export CLICOLOR=1
-# export LS_COLORS='no=00:fi=00:di=00;34:ln=01;36:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.gz=01;31:*.bz2=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.avi=01;35:*.fli=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.ogg=01;35:*.mp3=01;35:*.wav=01;35:*.xml=00;31:'
-
 # -------------------------------------------------------------------------- }}}
 # {{{ Ibus settings
 
@@ -206,12 +169,12 @@ export CLICOLOR=1
 # {{{ Default Browers, File Manager, and 256 colors.
 if programExists nbrowser; then
 	export BROWSER="nbrowser"
+elif programExists yandex-browser; then
+	export BROWSER=yandex-browser
 elif programExists brave-browser; then
 	export BROWSER=brave-browser
 elif programExists google-chrome; then
 	export BROWSER=google-chrome
-elif programExists yandex-browser; then
-	export BROWSER=yandex-browser
 elif programExists firefox; then
 	export BROWSER=firefox
 else
@@ -219,17 +182,19 @@ else
 fi
 
 if programExists w3m; then
-	export BROWSERCLI=w3m
+	export BROWSER_CLI=w3m
+elif programExists lynx; then
+	export BROWSER_CLI=lynx
 else
-	export BROWSERCLI=""
+	export BROWSER_CLI=""
 fi
 
 if programExists luakit; then
-	export BROWSERMIN=luakit
+	export BROWSER_MIN=luakit
 elif programExists surf; then
-	export BROWSERMIN=surf
+	export BROWSER_MIN=surf
 else
-	export BROWSERMIN=""
+	export BROWSER_MIN=""
 fi
 
 # export FILE=ranger
@@ -339,3 +304,6 @@ export READER="zathura"
 # [ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"
 
 export PASSWORD_STORE_ENABLE_EXTENSIONS=true
+
+# vim: ft=zsh syntax=sh
+

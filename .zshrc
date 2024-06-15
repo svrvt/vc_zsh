@@ -28,24 +28,16 @@ HISTSIZE='128000'
 SAVEHIST='128000'
 
 # ZDOTDIR=${ZDOTDIR:-${HOME}}
-# ZSHDDIR="${HOME}/.config/zsh"
+ZSHDDIR="${HOME}/.config/zsh"
 
-DOT_SHELL=$GIT_HOME/re_shell
-
-my_sourses=("aliases" "zsh_prompt")
+# zsh_sourses=("exports" "options" "aliases" "functions" "zle" "bindings" "compctl" "style" "misc" "prompt")
+zsh_sourses=("aliases" "prompt")
 
 if [[ -o interactive ]]; then
-  for m in "${my_sourses[@]}"; do
-    [[ -f "$ZSHDDIR/my_$m" ]] && source "$ZSHDDIR/my_$m"
+  for m in "${zsh_sourses[@]}"; do
+    [[ -f "$ZSHDDIR/$m" ]] && source "$ZSHDDIR/$m"
   done
 fi
-
-# Test and then source exported variables.
-# my_array=("exports" "options" "aliases" "functions" "zle" "bindings" "compctl" "style" "misc" "paths" "prompt")
-#
-# for m in "${my_array[@]}"; do
-# 	[[ -f "$ZSHDDIR/zsh$m" ]] && source "$ZSHDDIR/zsh$m" || echo "Note: $ZSHDDIR/zsh$m in unavailable"
-# done
 
 # (switch to Emacs mode)
 bindkey -e

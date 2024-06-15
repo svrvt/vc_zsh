@@ -1,6 +1,10 @@
 *
 !/.config/sheldon/plugins-zsh.toml
-!/.config/zsh/backup_func
+!/.config/zsh/aliases
+!/.config/zsh/completions
+!/.config/zsh/export.private
+!/.config/zsh/exports
+!/.config/zsh/functions
 !/.config/zsh_migrate/zlogin
 !/.config/zsh_migrate/zlogout
 !/.config/zsh_migrate/zshaliases
@@ -13,13 +17,8 @@
 !/.config/zsh_migrate/zshrc
 !/.config/zsh_migrate/zshstyle
 !/.config/zsh_migrate/zshzle
-!/.config/zsh/my_aliases
-!/.config/zsh/my_completions
-!/.config/zsh/my_export_private
-!/.config/zsh/my_exports_and_paths
-!/.config/zsh/my_functions
-!/.config/zsh/my_zsh_functions
-!/.config/zsh/my_zsh_prompt
+!/.config/zsh/prompt
+!/.config/zsh/zsh_functions
 !/.gitignore.d/vc_zsh
 !/.zprofile
 !/.zshenv

@@ -22,8 +22,8 @@
 
 # Git <http://git.or.cz/>
 if [[ -x `which git` ]]; then
-	(( ${+GIT_AUTHOR_EMAIL} )) || export GIT_AUTHOR_EMAIL="strcat@gulli.com"
-	(( ${+GIT_AUTHOR_NAME} )) || export GIT_AUTHOR_NAME="Christian Schneider"
+	(( ${+GIT_AUTHOR_EMAIL} )) || export GIT_AUTHOR_EMAIL="svrvt.zrv@gmail.com"
+	(( ${+GIT_AUTHOR_NAME} )) || export GIT_AUTHOR_NAME="Rustam Uzairov"
 	(( ${+GIT_COMMITTER_EMAIL} )) ||export GIT_COMMITTER_EMAIL=$GIT_AUTHOR_EMAIL
 fi
 # Darcs <http://www.darcs.net/>
@@ -114,7 +114,7 @@ fi
   export ZVERSION=${VERSION:-"zsh $ZSH_VERSION"}
 # это значение необязательно, поскольку CRUX не имеет информационных страниц
   typeset -U infopath # no duplicates
-  export INFOPATH="/usr/share/info:/usr/share/binutils-data/i686-pc-linux-gnu/2.16.1/info:/usr/share/gcc-data/i686-pc-linux-gnu/3.4.5/info/"
+  export INFOPATH="/usr/share/info"
 # стандартная зашифрованная сессия через rsync
   export RSYNC_RSH=ssh
 # Не используйте RSH! RSH - отстой!!!
@@ -122,7 +122,7 @@ fi
 # то же самое, что ``-rwxrwxr-x''.
   export CVSUMASK=003
 # используйте ``CVSEDITOR=emacs'', если хотите использовать полноценную ОС :>
-  export CVSEDITOR=vim
+  export CVSEDITOR=nvim
 
 # Некоторые настройки для manpages
   # Установите ширину 80. Этого достаточно
@@ -282,15 +282,11 @@ if (( EUID == 0 )); then
         fi
 fi
 
-# если ваш compdef Dir - ~/.zsh
-if [ -d "${HOME}/.zsh/func" ]; then
-	fpath=( $fpath ~/.zsh/func )
-	autoload -U ~/.zsh/func/*(:t)
+# если ваш compdef Dir - ~/zsh
+if [ -d "${HOME}/zsh/func" ]; then
+	fpath=( $fpath ~/zsh/func )
+	autoload -U ~/zsh/func/*(:t)
 fi
-
-# Массив (список, разделенный двоеточиями) каталогов, задающих
-# путь поиска для команды cd.
-CDPATH="$PORTS_DIR"
 
 # See <http://sugi.nemui.org/doc/zsh/> for details.
 if autoload +X -U _accept_line_with_url > /dev/null 2>&1 ; then
@@ -310,7 +306,7 @@ typeset -gU path cdpath manpath fpath
 # RTFM!!!11!
 MANPATH="/usr/share/man:/usr/local/man"
 for mdir in \
-        ${HOME}/.Documentations/manpages.ru \
+        ${HOME}/.documentations/manpages.ru \
         /usr/man \
         /usr/X11/man \
         /usr/share/texmf/man \
@@ -323,9 +319,9 @@ done
 
 # Выполняется всякий раз, когда команда имеет ненулевой статус выхода:
 #-------------------------------------------------- 
-if fortune > /dev/null 2>&1 ;then
-	TRAPZERR() { fortune bofh-excuses | tail -n 1 }
-fi
+# if fortune > /dev/null 2>&1 ;then
+# 	TRAPZERR() { fortune bofh-excuses | tail -n 1 }
+# fi
 
 # Подсказка, используемая для исправления орфографии. Последовательность `%R' расширяется до
 # строки, которая предположительно нуждается в исправлении, а `%r' расширяется

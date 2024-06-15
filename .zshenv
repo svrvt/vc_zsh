@@ -1,20 +1,18 @@
 # awesome-client "local naughty=require('naughty'); require('awful').spawn.easy_async('env', function(out) naughty.notify({title="ENV", text=out})end)"
 
 # export XDG_CURRENT_DESKTOP="KDE"
+
 export XDG_CONFIG_HOME="$HOME/.config"
-# export XDG_CURRENT_DESKTOP="KDE"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_STATE_HOME="$HOME/.local/state"
+export XDG_CACHE_HOME="$HOME/.cache"
 
 # GIT_HOME=$HOME/aggregate
-# DOT_SHELL=$GIT_HOME/re_shell
-# DOT_SHELL=$GIT_HOME/re_shell
-# SHELLSOURCE=$DOT_SHELL/home/sources
 
 ZDOTDIR=${ZDOTDIR:-${HOME}}
 ZSHDDIR="${XDG_CONFIG_HOME}/zsh"
 
-
-# SHELLSOURCE=$DOT_SHELL/home/sources
-my_array=("functions" "zsh_functions" "exports_and_paths")
-for m in "${my_array[@]}"; do
-	[[ -f "$ZSHDDIR/my_$m" ]] && source "$ZSHDDIR/my_$m"
+zsh_sourses=("functions" "zsh_functions" "exports")
+for m in "${zsh_sourses[@]}"; do
+	[[ -f "$ZSHDDIR/$m" ]] && source "$ZSHDDIR/$m"
 done
