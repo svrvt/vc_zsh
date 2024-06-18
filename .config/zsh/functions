@@ -524,14 +524,17 @@ fzf_select_file() {
 	fzf_select_path "$@"
 }
 
-path() { sed 's/:/\n/g' <<< $PATH; }
-# FIX:hilight
-fpath() { sed 's/ /\n/g' <<< $fpath; }
+path() { sed 's/:/\n/g' <(echo $PATH) }
+  
+fpath() { sed 's/ /\n/g' <(echo $fpath); }
 
 
-ew() {
-	$EDITOR "$(which "$1")"
-}
-bindkey -s "e\t" "$EDITOR $(which !!)^M"
+ew() { $EDITOR "$(which "$1")" }
+
+# open-last-command() {
+#   $EDITOR $(which $(history | head -1 | awk '{print $2}'))
+# }
+# bindkey -s "e\t" "open-last-command^M"
+# bindkey -s "e\t" "$EDITOR $(which !!)^M"
 
 # vim: ft=zsh syntax=sh
