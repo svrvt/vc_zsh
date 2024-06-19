@@ -1,0 +1,1848 @@
+# Если не запущен в интерактивном режиме, ничего не делать
+[ -z "${PS1}" ] && return
+
+# Модификатор `:P` аналогичен realpath и канонизирует путь,
+# включая преобразование его в абсолютный.
+: "${REPO_ROOT:="${$(print -r -- "${ZSHENV_DIR}/../.."):P}"}"
+readonly REPO_ROOT
+: "${SUBMODULES_DIR:="${REPO_ROOT}/submodules"}"
+readonly SUBMODULES_DIR
+: "${PLUGINS_DIR:="${SUBMODULES_DIR}/zsh"}"
+readonly PLUGINS_DIR
+: "${XDG_CACHE_HOME:=${HOME}/.cache}"
+readonly XDG_CACHE_HOME
+: "${XDG_DATA_HOME:="${HOME}/.local/share"}"
+readonly XDG_DATA_HOME
+: "${ZSH_CACHE_DIR:="${XDG_CACHE_HOME}/zsh"}"
+readonly ZSH_CACHE_DIR
+: "${BASH_CONFIG_DIR:="${REPO_ROOT}/.config/bash"}"
+readonly BASH_CONFIG_DIR
+
+# Ссылки:
+# - https://stackoverflow.com/a/4351664/1014208
+# - https://jb-blog.readthedocs.io/en/latest/posts/0032-debugging-zsh-startup-time.html
+# - https://esham.io/2018/02/zsh-profiling
+if ((${ZSHRC_ENABLE_PROFILING_BY_LINE:-0})); then
+  if ((ZSHRC_ENABLE_PROFILING_BY_LINE == 2)); then
+    # Дублируем stderr в новый файловый дескриптор stderr_fd_dup и дублируем
+    # stdout в stderr (включая вывод трассировки). 
+    # В итоге вывод трассировки будет записан в stdout, и мы
+    # сможем позже восстановить stderr в исходный файл с помощью stderr_fd_dup.
+    exec {stderr_fd_dup}>&2 2>&1
+    setopt XTRACE
+  else
+    zmodload -F zsh/datetime +p:EPOCHREALTIME
+    declare -g ZSHRC_START_TIME="${EPOCHREALTIME}"
+    # %x расширяется до выполняемого файла, а %N расширяется до окружающего
+    # функцию или файл, поэтому они могут быть одинаковыми, если код выполняется не внутри
+    # функции. Чтобы сделать вывод более читабельным, я попытался выводить эхо только в том случае, если %N
+    # он отличается от %x, но это вызвало значительное замедление профилированного
+    # процесса, поэтому я отказался от этой идеи.
+    PS4='$((EPOCHREALTIME-ZSHRC_START_TIME)) %x:%I [%N] > '
+    logfile="zsh_startup_by_line.$$.log"
+    echo "zshrc: Writing per line timing data to file: ${logfile}"
+    # Дублируем stderr в новый файловый дескриптор stderr_fd_dup и перенаправляем
+    # stderr (включая вывод трассировки) в файл журнала.
+    # В итоге вывод трассировки будет записан в файл журнала,
+    # и мы сможем позже восстановить stderr в исходный файл с помощью stderr_fd_dup.
+    exec {stderr_fd_dup}>&2 2>"${logfile}"
+    # Установите опции для включения трассировки и расширения переменных, команд и
+    # последовательности подсказок, содержащихся в подсказке.
+    setopt XTRACE PROMPT_SUBST PROMPT_PERCENT
+  fi
+elif ((${ZSHRC_ENABLE_PROFILING:-0})); then
+  echo 'zshrc: Enabling high level profiling\n'
+  zmodload zsh/zprof
+elif ((${ZSHRC_DISABLE_P10K_INSTANT_PROMPT:-0})); then
+  echo 'zshrc: P10K instant prompt is disabled'
+else
+  # Включить отображение мгновенной приглашения Powerlevel10k. Должна находиться в верхней части
+  # ~/.zshrc.  Код инициализации, который может потребовать ввода с консоли (пароль
+  # запросы, подтверждения [y/n] и т. д.) должен располагаться выше этого блока, все # остальное - ниже.
+  # остальное может располагаться ниже.
+  if [[ -r "${XDG_CACHE_HOME}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+    source "${XDG_CACHE_HOME}/p10k-instant-prompt-${(%):-%n}.zsh"
+  fi
+fi
+
+# Если ZSH_RUN_TRACKED ненулевой, определите maybe-run-tracked как функцию, которая
+# вызывает run-tracked с предоставленными args. В противном случае определите maybe-run-tracked
+# как функцию, которая обычно выполняет заданную команду, игнорируя опции run-tracked,
+# которые предшествуют двойному тире.
+# Примеры вызова maybe-run-tracked:
+# 1. maybe-run-tracked -- printf '%s\n' 1
+# 2. maybe-run-tracked -b +f -- printf '%s\n' 2
+if ((${ZSH_RUN_TRACKED:-0})); then
+  autoload -Uz run-tracked
+  maybe-run-tracked() {
+    local -a run_tracked_args
+    while [[ $# -gt 0 && "$1" != "--" ]]; do
+      run_tracked_args+=("$1")
+      shift 1
+    done
+    run-tracked "${run_tracked_args[@]}" "${@:2}"
+  }
+else
+  maybe-run-tracked() {
+    # См. комментарий выше.
+    while [[ $# -gt 0 && "$1" != "--" ]]; do
+      shift 1
+    done
+    "${@:2}"
+  }
+fi
+
+# Мы не всегда хотим использовать `emulate -L zsh`, потому что это может вызвать проблемы, если
+# выполняемый код задает или зависит от определенных глобальных опций. Поэтому мы используем
+# отдельную функцию для этого. См. также:
+# https://github.com/romkatv/powerlevel10k/issues/496
+maybe-run-tracked-emulate() {
+  emulate -L zsh
+  maybe-run-tracked "$@"
+}
+
+source_compiled() {
+  [[ $# -eq 0 ]] && { source; return $?; }
+  local filepath="$1"
+  shift 1
+  local args=("$@")
+  if ((${ZSHRC_DISABLE_ZCOMPILE:-0})); then
+    [[ -w "${filepath}.zwc" ]] && rm -- "${filepath}.zwc"
+    builtin source -- "${filepath}" "$@"
+    return
+  fi
+
+  # Canonicalize filepath.
+  filepath="${filepath:P}"
+  # Мы не хотим загромождать каталоги исходных файлов, поэтому мы
+  # централизуем все скомпилированные файлы в ${ZSH_CACHE_DIR}/zwc. Кроме того,
+  # размещение zwc в другом каталоге имеет то преимущество, что не требует, чтобы
+  # нахождения исходного файла в каталоге, доступном для записи.
+  # Однако для того, чтобы это работало, мы должны сделать симлинки на исходные файлы, чтобы
+  # использовать скомпилированный файл. Причина в том, что я не смог найти путь к исходникам
+  # скомпилированных файлов напрямую. Zsh автоматически использует скомпилированный файл, если.
+  # он существует в том же каталоге и имеет такое же имя (с расширением zwc
+  # расширением).
+  # NOTE: перед ${filepath} не нужен слэш, потому что это полный путь.
+  local symlink="${ZSH_CACHE_DIR}/zwc${filepath}"
+  local symlink_dir="${symlink:h}"
+  if [[ ! -d "${symlink_dir}" ]]; then
+    mkdir -p -- "${symlink_dir}"
+  fi
+  if [[ ! -f "${symlink}" ]]; then
+    ln --symbolic --relative -- "${filepath}" "${symlink}"
+  fi
+  # Мы используем zrecompile, чтобы выяснить, какие файлы нуждаются в перекомпиляции. Это
+  # лучше, чем сравнение времени модификации, потому что оно также учитывает
+  # скомпилированные файлы, которые нуждаются в перекомпиляции, потому что они были скомпилированы в
+  # несовместимой версии zsh.
+  autoload -Uz zrecompile
+  # Опция `-q` делает zrecompile неинформативным.
+  local zrecompile_options=(-q)
+  if [[ ! -f "${symlink}.zwc" ]]; then
+    # Флаг `-p` гарантирует, что компиляция произойдет, даже если нет существующего
+    # скомпилированного файла.
+    zrecompile_options+=(-p)
+  fi
+  zrecompile "{zrecompile_options[@]}" -- "${symlink}"
+  # # Если путь к скомпилированному файлу новее пути к исходному файлу.
+  # if [[ ! ${symlink}.zwc -nt ${filepath} ]]; then
+  # zcompile -R -- "${symlink}"
+  # fi
+  # shellcheck disable=SC2154
+  # ZERO используется некоторыми плагинами zsh для задания пути к основному плагину
+  # файла, который затем используется для получения путей к дополнительным файлам. Это используется,
+  # например, в fast-syntax-highlighting.
+  ZERO="${filepath}" builtin source -- "${symlink}" "${(q)args[@]}"
+}
+
+# См. примечание в .zshenv об источнике .profile.
+emulate sh -c 'source ${ZSHENV_DIR}/../../.profile'
+source "${REPO_ROOT}/.my_scripts/lib/base.sh"
+source "${REPO_ROOT}/.my_scripts/lib/platform_detection.sh"
+
+################################################################################
+#                           General settings                                   #
+################################################################################
+# Выводить hex/oct числа как 0xFF/077 вместо 16#FF/8#77.
+setopt C_BASES
+
+# Имя команды, которую следует принимать, если перенаправление задано без команды
+# NULLCMD=/dev/null
+
+# Попытайтесь исправить написание команд.
+setopt CORRECT
+# Попытка исправить написание всех аргументов в строке.
+# Отключено, так как пытается исправить аргументы различных команд (g4, tmux,
+# и т. д.) к путям и это, как правило, неправильно.
+# TODO: Определите и внесите в белый список определённые команды для автокоррекции.
+# где она будет работать хорошо.
+# setopt CORRECT_ALL
+
+# Выводить значение выхода программ с ненулевым статусом выхода.
+# Пока отключено, так как это вносит некоторый беспорядок.
+# setopt PRINT_EXIT_VALUE
+
+# Сообщать о состоянии фоновых и приостановленных заданий перед выходом из оболочки с
+# контролем заданий
+setopt CHECK_JOBS
+# Не посылать сигнал HUP запущенным заданиям при выходе из оболочки.
+setopt NO_HUP
+
+# Возобновлять работу при выполнении команды с тем же именем, что и имя приостановленного процесса
+setopt AUTO_RESUME
+
+# Выполнять поиск пути даже в именах команд со слешами.
+setopt PATH_DIRS
+
+source_compiled "${BASH_CONFIG_DIR}/settings.sh"
+
+# update_environment_from_tmux определяется в settings.sh.
+autoload -Uz add-zsh-hook
+add-zsh-hook preexec update_environment_from_tmux
+
+# Добавьте z4h и персональные функции
+fpath=(
+  "${ZDOTDIR}/fpath"
+  ${fpath}
+  "${PLUGINS_DIR}/zsh4humans/fn"
+)
+# https://github.com/direnv/direnv
+# См. также:
+# https://github.com/romkatv/zsh4humans/issues/8#issuecomment-596187925
+if command_exists direnv; then
+  # Родная поддержка z4h direnv, пока что отключена, потому что у меня нет
+  # проблемы производительности с текущим direnv.
+  # https://github.com/romkatv/zsh4humans/issues/8#issuecomment-952667140
+  # autoload -Uz -- -z4h-direnv-init
+  # -z4h-direnv-init 0
+  # add-zsh-hook chpwd -z4h-direnv-hook
+  # add-zsh-hook precmd -z4h-direnv-hook
+  eval "$(direnv hook zsh)"
+fi
+
+maybe-run-tracked-emulate -- source_compiled \
+  "${PLUGINS_DIR}/oh-my-zsh/plugins/command-not-found/"*.plugin.zsh
+
+################################################################################
+#                 Bash compatibility and interactive scripting                 #
+#                 Совместимость с Bash и интерактивный скриптинг               #
+################################################################################
+# Разрешите комментарии даже в интерактивных оболочках.
+setopt INTERACTIVE_COMMENTS
+
+# Не интерпретировать экранирующие последовательности в echo, если не задана опция -e.
+# Это такое же поведение, как и в bash.
+setopt BSD_ECHO
+
+# Выполняйтеimplicit tees or cats при попытке нескольких перенаправлений.
+# По состоянию на 2020-08-03 это отключено, потому что я не использую эту функцию и у меня есть
+# опасения, что это может что-то сломать.
+# setopt MULTIOS
+# Если какая-либо команда в конвейере завершилась неудачно, установите код ошибки.
+setopt PIPE_FAIL
+# Когда эта опция не установлена, эффект команд break и continue может
+# распространяться за пределы области видимости функции.
+setopt LOCAL_LOOPS
+
+# Делает согласование regex более похожим на bash. Полезно для совместного использования кода между zsh
+# и bash, например, при работе с постоянной историей.
+# NOTE: Начиная с 2020-03-05, это отключено, потому что я беспокоюсь, что это может сломать zsh
+# код. Если я действительно буду использовать эту возможность в zsh (а сейчас это не так), я могу включить её.
+# локально в функции, которая ее использует.
+# setopt BASH_REMATCH
+
+# Другие опции, которые следует рассмотреть для установки с выявленными проблемами по состоянию на 2020-08-03:
+# NO_UNSET: нарушает p10k.
+# POSIX_IDENTIFIERS: нарушает p10k.
+# KSH_ARRAYS: нарушает множество вещей.
+# POSIX_CD, GLOB_SUBST, KSH_GLOB, POSIX_JOBS, LOCAL_TRAPS, POSIX_ALIASES,
+# POSIX_BUILTINS, POSIX_STRINGS, POSIX_TRAPS, SH_FILE_EXPANSION, SH_NULLCMD,
+# SH_OPTION_LETTERS, SH_WORD_SPLIT
+
+################################################################################
+# Навигация/управление файлами
+################################################################################
+# Не перезаписывайте существующие файлы с помощью > и >>. Используйте >! и >>! для обхода.
+setopt NO_CLOBBER
+# Если перенаправление append (>>) используется для несуществующего файла, создайте его.
+# Это такое же поведение, как и в bash.
+setopt APPEND_CREATE
+
+# Если получена команда, которая не может быть выполнена как обычная команда, и
+# команда является именем директории, выполните команду cd для этой директории
+setopt AUTO_CD
+# Заставить cd поместить прежнюю директорию в стек директорий.
+setopt AUTO_PUSHD
+# Переместить в домашний каталог, если аргумент не указан.
+setopt PUSHD_TO_HOME
+# Меняет местами значения символов '+' и '-', когда они используются с числом для указания
+# директории в стеке.
+setopt PUSHD_MINUS
+setopt PUSHD_SILENT
+# Не хранить дубликаты в стеке.
+setopt PUSHD_IGNORE_DUPS
+# Изменить директорию на путь, хранящийся в переменной.
+# Ранее эта функция была отключена, так как в настоящее время она не используется, а также включает
+# пользовательское завершение, которое было очень медленным на работе. См. также:
+# http://www.zsh.org/mla/users/2006/msg00776.html
+setopt CDABLE_VARS
+
+# Сделать globbing ( построение имен файлов) чувствительным к регистру
+setopt CASE_GLOB
+# Рассматривать символы '#', '~' и '^' как часть шаблонов для создания имен файлов и т. д.
+setopt EXTENDED_GLOB
+# Включить ** и *** в globbing.
+setopt GLOB_STAR_SHORT
+# Не требовать явного указания символа '.' в имени файла.
+setopt GLOB_DOTS
+
+# Подтверждать при выполнении команды 'rm *'.
+setopt RM_STAR_WAIT
+
+# Если путь является директорией, добавьте '/' в хвост пути при генерации пути по glob
+setopt MARK_DIRS
+
+# Массив (список, разделенный двоеточием) директорий, задающих путь поиска для
+# команды cd
+# cdpath=(. ${HOME})
+
+# zmv - это потрясающе. Вы можете выполнить команду "mmv *.cc *.cpp", чтобы переименовать все файлы .cc в .cpp.
+# Введите "zmv" для получения дополнительной информации.
+autoload -Uz zmv zcp zln
+
+function {
+  local XDG_CACHE_HOME="${XDG_CACHE_HOME:-${HOME}/.cache}"
+  local fasd_cache_dir="${XDG_CACHE_HOME}/fasd"
+  mkdir -p -- "${fasd_cache_dir}"
+  local fasd_cache="${fasd_cache_dir}/fasd-init-zsh"
+  local fasd="$(command -v fasd 2> /dev/null)" || return
+  if [[ ! -e "${fasd_cache}" || "${fasd:P}" -nt "${fasd_cache}" ]]; then
+    fasd --init zsh-hook zsh-wcomp >| "${fasd_cache}"
+  fi
+  source "${fasd_cache}"
+}
+
+# Сохранение недавних директорий из zshcontrib.
+autoload -Uz chpwd_recent_dirs cdr add-zsh-hook
+add-zsh-hook chpwd chpwd_recent_dirs
+zstyle ':chpwd:*' recent-dirs-max 500
+zstyle ':chpwd:*' recent-dirs-default true
+zstyle ':chpwd:*' recent-dirs-file "${ZSH_CACHE_DIR}/chpwd-recent-dirs"
+zstyle ':chpwd:*' recent-dirs-pushd true
+
+################################################################################
+#                                History                                       #
+################################################################################
+source_compiled "${BASH_CONFIG_DIR}/history/history.sh"
+HISTFILE="$(get_host_history_dir)/zsh_history"
+HISTSIZE=100000000
+SAVEHIST=100000000
+
+# Всякий раз, когда пользователь вводит строку с расширением истории, не выполняйте ее
+# напрямую; вместо этого выполните расширение истории и перезагрузите строку в
+# буфер редактирования.
+setopt HIST_VERIFY
+# Выполнять текстовое расширение истории в стиле csh, обрабатывая символ '!'
+# специально.
+setopt BANG_HIST
+
+# Сохраните время начала и время выполнения команд в файле истории.
+setopt EXTENDED_HISTORY
+# Удалять лишние пробелы из каждой командной строки, добавляемой в историю
+# NOTE: По состоянию на 2020-02-11, HIST_REDUCE_BLANKS отключен, поскольку он уменьшает все
+# отступы в многострочных командах.
+# setopt HIST_REDUCE_BLANKS
+# Не вносить строки команд в список истории, если они являются дубликатами
+# предыдущего действия.
+setopt HIST_IGNORE_DUPS
+# Не добавлять команды в эту историю, если они начинаются с пробела. Полезно для
+# команд, содержащих конфиденциальную информацию.
+setopt HIST_IGNORE_SPACE
+# При записи файла истории старые команды, дублирующие более новые
+# опускаются.
+setopt HIST_SAVE_NO_DUPS
+# При очистке истории сначала удаляются дублирующиеся записи.
+setopt HIST_EXPIRE_DUPS_FIRST
+# Не показывать дубликаты при поиске в истории.
+setopt HIST_FIND_NO_DUPS
+
+# NOTE: INC_APPEND_HISTORY, INC_APPEND_HISTORY_TIME и SHARE_HISTORY являются
+# взаимоисключающими согласно руководству zsh.
+# Запись в файл истории сразу, а не при выходе из оболочки.
+# setopt INC_APPEND_HISTORY
+# Записывайте команду после ее завершения, чтобы время выполнения также
+# записывалось.
+setopt INC_APPEND_HISTORY_TIME
+# Разделите историю между всеми сессиями.
+# setopt SHARE_HISTORY
+
+_histcat_preexec_hook() {
+  emulate -L zsh
+  autoload -Uz regexp-replace
+  # Первый аргумент в prexec hook - это команда, набранная пользователем,
+  # а третий - расширенные псевдонимы. См. также:
+  # http://zsh.sourceforge.net/Doc/Release/Functions.html
+  local typed_cmd="$1"
+  local expanded_cmd="$3"
+  # Удалите пробельные символы в конце строки
+  regexp-replace typed_cmd '\s+$' ''
+  regexp-replace expanded_cmd '\s+$' ''
+  # Соблюдение HIST_IGNORE_SPACE: если расширенная команда начинается с пробела,
+  # не добавлять ее в постоянную историю. Полезно для команд, содержащих
+  # конфиденциальную информацию.
+  if [[ -o HIST_IGNORE_SPACE &&
+      ("${typed_cmd}" == ' '* || "${expanded_cmd}" == ' '*) ]]; then
+    return
+  fi
+  histcat-verify
+  # NOTE: для запуска histcat в zeus18 требуется 4-5 мс, поэтому я запускаю его в
+  # фоне. Вложенная оболочка необходима для того, чтобы избежать вывода информации о том, что задание было
+  # запущено.
+  (histcat add --typed-command "${typed_cmd}" \
+    --expanded-command "${expanded_cmd}" &) &> /dev/null
+}
+
+autoload -Uz add-zsh-hook
+# NOTE: Существует также хук zshaddhistory, но мы его не используем, потому что он
+# в отличие от preexec, не передает фактическую команду, которая будет выполнена,
+# которую мы сохраняем в нашей пользовательской истории. Кроме того, нет никаких явных преимуществ
+# в его использовании для нашего случая, хотя это может измениться, если мы начнем использовать `fc` для
+# манипулирования историей.
+add-zsh-hook preexec _histcat_preexec_hook
+
+################################################################################
+# Completion
+################################################################################
+# На странице руководства zshcompsys говорится о необходимости загрузки этого модуля при использовании menu select.
+# Это должно быть сделано до вызова compinit.
+zmodload zsh/complist
+
+setopt AUTO_LIST
+setopt AUTO_MENU
+# Спрашивает, нужно ли выводить список совпадений только в том случае, если верхняя часть списка будет прокручиваться за пределы
+# экрана.
+LISTMAX=0
+# Если завершение неоднозначно, покажите мне меню сразу.
+setopt NO_LIST_AMBIGUOUS
+# При перечислении файлов, которые являются возможными завершениями, показывайте тип каждого файла
+# с последующей идентификационной меткой.
+setopt LIST_TYPES
+# Если последний символ, полученный в результате завершения, - косая черта, а следующий
+# символом является разделитель слов, косая черта или символ, завершающий
+# команду (например, точка с запятой или амперсанд), удалите косую черту.
+setopt AUTO_REMOVE_SLASH
+setopt GLOB_COMPLETE
+setopt COMPLETE_IN_WORD
+setopt ALWAYS_TO_END
+# Если завершенный параметр является директорией, добавьте слэш в конце.
+setopt AUTO_PARAM_SLASH
+# Включить завершение имени файла для аргументов команды в виде `--arg=` после
+# знака равенства. Не отменяет существующее завершение аргументов, используется только в том случае, если
+# не определено завершение.
+setopt MAGIC_EQUAL_SUBST
+
+function {
+  # NOTE: До 2019-05-21 я не использовал автоматический выбор первого результата, так что
+  # если это меня раздражает, я могу вернуться к прежнему поведению с помощью комментария
+  # кода ниже.
+  local AUTOSELECT_FIRST_COMPLETION=1
+  # Использовать меню завершения и автовыбор первого результата.
+  if ((AUTOSELECT_FIRST_COMPLETION)); then
+    setopt MENU_COMPLETE
+    zstyle ':completion:*' menu true select
+  # Использует меню завершения, но НЕ автовыбор первого результата, даже если есть
+  # есть несколько вариантов.
+  # Вместо этого перечислите варианты завершения и, только если я нажму tab во второй раз, выберите вариант
+  # завершение (и перебирает остальные).
+  else
+    setopt NO_MENU_COMPLETE
+    zstyle ':completion:*' menu select
+  fi
+}
+
+function {
+  # Умный регистр: строчные буквы во входных данных также соответствуют прописным буквам в
+  # кандидатах на завершение (но не наоборот), а одинарное тире в
+  # начале строки совпадает с двойным тире в начале строки.  
+   local smartcase='m:{[:lower:]}={[:upper:]} l:|-=--'
+  # Попытаться завершить в следующем порядке (остановиться, когда есть хотя бы
+  # одно совпадение):
+  # NOTE(infokiller): Я использовал префикс '+' в каждом совпадении, кроме
+  # первого, чтобы сделать процесс точного завершения более общим, но это вызвало
+  # проблему, потому что кажется, что иногда совпадение со smartcase должно быть в
+  # в конце. Например, следующие списки сопоставлений не эквивалентны:
+  # - 'm:{[:lower:]}={[:upper:]} r:-||?=*'
+  # - 'r:-||?=* m:{[:lower:]}={[:upper:]}'
+  # Чтобы увидеть их разницу, протестируйте завершение с вводом "ab" и
+  # кандидатами "A-Ab" и "axb".
+  local matcher_list=(
+    "${smartcase}"
+    # Тире во входных данных, которые НЕ находятся в начале строки, соответствуют
+    # подчеркиваниям в кандидатах на завершение, и аналогично подчеркиваниям соответствуют
+    # тире.
+    'l:?|-=_ l:?|_=- '"${smartcase}"
+    # Сопоставляет любую аббревиатуру между разделителями в квадратных скобках, так что
+    # например, 'a.b' соответствует 'acc.bdd', а 'a-b' соответствует 'acc-bdd'.
+    'r:|[.,%$#@/_-]=* r:|=* '"${smartcase}"
+    # Аналогично первому, но не требует явного ввода разделителей.
+    # Например, 'ab' будет соответствовать 'acc-bdd'.
+    # NOTE: В настоящее время он также соответствует 'xxx-acc-bdd', т. е. не
+    # требуется указывать префикс для каждого разграниченного слова.
+    'r:[.,%$#@/_-]||?=* '"${smartcase}"
+    # Сопоставление подстроки: 'bc' соответствует 'abcd'.
+    'l:|=*' "${smartcase}"
+    # Нечеткое завершение: 'abc' соответствует 'axbxcx'.
+    'r:?||?=** '"${smartcase}"
+    # Игнорировать регистр: сопоставлять прописные буквы и символы подчеркивания во входных данных со
+    # строчными буквами и дефисами в кандидатах на завершение.
+    '+m:{[:upper:]}={[:lower:]} m:{_\-}={\-_}'
+  )
+  zstyle ':completion:*' matcher-list "${matcher_list[@]}"
+}
+
+# Нечеткое совпадение ошибочных завершений.
+zstyle ':completion:*' completer _complete _match _approximate
+zstyle ':completion:*:match:*:*:*' original only
+# zstyle ':completion:*:approximate:*' max-errors 1 numeric
+# Разрешает до N/3 ошибок для запроса завершения длины N, с максимальным значением 5.
+zstyle -e ':completion:*:approximate:*:*:*' max-errors \
+  'reply=($((($#PREFIX+$#SUFFIX)/3 < 5 ? ($#PREFIX+$#SUFFIX)/3 : 5))numeric)'
+# Используйте кэш для более быстрого завершения
+zstyle ':completion:*' use-cache true
+zstyle ':completion:*' cache-path "${ZSH_CACHE_DIR}"
+zstyle ':completion:*' single-ignored menu
+
+# Группировка и описание совпадений.
+zstyle ':completion:*:matches' group true
+zstyle ':completion:*:options' description true
+zstyle ':completion:*:options' auto-description '%d'
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*' verbose true
+
+# Повторная переработка перед сопоставлением внешних команд, чтобы подобрать новые/удаленные команды.
+zstyle ':completion:*' rehash true
+
+# Файлы и директории
+function {
+  # Сначала пытается завершить не скрытые файлы/директории, но если нет совпадений, пытается
+  # завершить и скрытые файлы.
+  # NOTE: общая форма отключена, потому что она безоговорочно переопределяет
+  # поведение завершателя `_files`, заставляя его игнорировать шаблоны, переданные
+  # ему от функций завершения. Например, она заставляет unzip и zathura завершать
+  # любой файл (вместо того, чтобы завершать только zip-файлы и pdf-файлы соответственно).
+  # Поэтому я определяю его только для определенных команд.
+  # zstyle ':completion:*' file-patterns '[^.]*:non-hidden-files' '.*:hidden-files'
+  local generic_file_completers=(ls exa eza cd-ranger cd-fasd-fzf ranger dirsize 
+    vim-less swap-files)
+  local generic_file_completers_context="$(printf ':completion:*:*:%s:*' \
+    "("$(join_by '|' "${generic_file_completers[@]}")")")"
+  zstyle "${generic_file_completers_context}" file-patterns \
+    '[^.]*:non-hidden-files' '.*:hidden-files'
+
+  zstyle ':completion:*:*:cd:*' \
+    tag-order local-directories directory-stack path-directories
+  zstyle ':completion:*:-tilde-:*' group-order \
+    'named-directories' 'path-directories' 'users' 'expand'
+  zstyle ':completion:*' squeeze-slashes true
+  zstyle ':completion:*' ignore-parents parent pwd
+  # Настройки завершения для функции `cdr` из zshcontrib.
+  zstyle ':completion:*' recent-dirs-insert both
+
+  # Video & audio
+  local video_exts=(mkv avi mp4 m4p m4v mpg mpeg mov wmv qt giv gifv 3gp 3gpp
+    3gpp2 ogg ogv vnd webm)
+  local video_patterns="$(printf '(.|)*.{%s}' $(join_by , "${video_exts[@]}"))"
+  zstyle ':completion:*:complete:(vlc|mpv):*' file-patterns \
+    "${video_patterns}"':videos *(-/):directories'
+  zstyle ':completion:*:*:mpg123:*' file-patterns \
+    '(.|)*.(mp3|MP3):mp3-files *(-/):directories'
+  zstyle ':completion:*:*:mpg321:*' file-patterns \
+    '(.|)*.(mp3|MP3):mp3-files *(-/):directories'
+  zstyle ':completion:*:*:ogg123:*' file-patterns \
+    '(.|)*.(ogg|OGG|flac):ogg-files *(-/):directories'
+  zstyle ':completion:*:*:mocp:*' file-patterns \
+    '(.|)*.(wav|WAV|mp3|MP3|ogg|OGG|flac):ogg-files *(-/):directories'
+  # Images
+  zstyle ':completion::complete:(geeqie|pqiv|pinta|gimp):*' file-patterns \
+    '(.|)*.{gif,png,jpeg,jpg,svg,bmp,tiff,tif}:images *(-/):directories'
+}
+
+# Не завершайте команды, начинающиеся с символа подчеркивания.
+# zstyle ':completion:*:functions' ignored-patterns '(_*|pre(cmd|exec))'
+
+# Сортировка элементов завершения массива.
+zstyle ':completion:*:*:-subscript-:*' tag-order indexes parameters
+
+# История
+zstyle ':completion:*:history-words' stop true
+zstyle ':completion:*:history-words' remove-all-dups true
+zstyle ':completion:*:history-words' list false
+
+# Переменные окружения
+zstyle ':completion::*:(-command-|export):*' fake-parameters \
+  ${${${_comps[(I)-value-*]#*,}%%,*}:#-*-}
+
+# Пополнение завершения по списку имен hostname.
+# NOTE: Я отключил заполнение из /etc/hosts, так как он содержит большое количество
+# хостов, которые заблокированы, потому что они обслуживают рекламу. Смотрите журнал git, чтобы узнать, как
+# вернуть это изменение.
+zstyle -e ':completion:*:hosts' hosts 'reply=(
+  ${=${=${=${${(f)"$(cat {/etc/ssh_,~/.ssh/known_}hosts(|2)(N) 2>/dev/null)"}%%[#| ]*}//\]:[0-9]*/ }//,/ }//\[/ }
+  ${=${${(@M)${(f)"$(cat ~/.ssh/config 2>/dev/null)"}:#Host *}#Host }:#*\**}:#*\?*}}
+)'
+
+# Не добавлять ненужных пользователей.
+zstyle ':completion:*:users' ignored-patterns \
+  adm amanda apache avahi beaglidx bin brltty cacti canna clamav colord cups \
+  daemon dbus dhcpcd distcache dnsmasq dnscrypt-proxy dovecot earlyoom fax \
+  flatpak ftp games geoclue gdm git gitlab-runner gkrellmd gluster gopher \
+  hacluster haldaemon halt hsqldb http ident junkbust keydope ldap lightdm lp \
+  mail mailman mailnull miniflux mldonkey mysql nagios named netdump news \
+  nfsnobody nm-openconnect nobody nscd nvidia-persistenced ntp nut nx openvpn \
+  operator pcap polkitd postfix postgres privoxy pulse pvm quagga radvd rpc \
+  rpcuser rpm rtkit shutdown squid sshd sync 'systemd-*' tor transmission tss \
+  usbmux uucp uuidd vcsa xfs '_*'
+
+# Не добавляйте к этим командам слова, которые уже находятся в строке.
+zstyle ':completion:*:(rm|trash-put|kill|diff):*' ignore-line other
+# zstyle ':completion:*:(rm|trash-put):*' file-patterns '*:all-files'
+
+zstyle ':completion:*:*:kill:*' force-list always
+zstyle ':completion:*:*:kill:*' insert-ids single
+
+zstyle ':completion:*:manuals' separate-sections true
+zstyle ':completion:*:manuals.(^1*)' insert-sections true
+
+# SSH/SCP/rsync
+zstyle ':completion:*:(ssh|scp|rsync):*' tag-order \
+  'hosts:-host:host hosts:-ipaddr:ip\ address *'
+zstyle ':completion:*:(scp|rsync):*' \
+  group-order files all-files hosts-domain hosts-host
+zstyle ':completion:*:ssh:*' group-order hosts-host
+zstyle ':completion:*:(ssh|scp|rsync):*:hosts-host' ignored-patterns \
+  '*(.|:)*' loopback ip6-loopback localhost ip6-localhost broadcasthost
+zstyle ':completion:*:(ssh|scp|rsync):*:hosts-domain' ignored-patterns \
+  '<->.<->.<->.<->' '^[-[:alnum:]]##(.[-[:alnum:]]##)##' '*@*'
+zstyle ':completion:*:(ssh|scp|rsync):*:hosts-ipaddr' ignored-patterns \
+  '^(<->.<->.<->.<->|(|::)([[:xdigit:].]##:(#c,2))##(|%*))' '127.0.0.<->' \
+  '255.255.255.255' '::1' 'fe80::*'
+
+# Git
+zstyle ':completion:*:git-*:argument-rest:heads'        ignored-patterns '(FETCH_|ORIG_|)HEAD'
+zstyle ':completion:*:git-*:argument-rest:heads-local'  ignored-patterns '(FETCH_|ORIG_|)HEAD'
+zstyle ':completion:*:git-*:argument-rest:heads-remote' ignored-patterns '*/HEAD'
+
+function {
+  local dephell
+  dephell="$(command -v dephell 2> /dev/null)" || return
+  dephell_comp_file="${XDG_DATA_HOME}/dephell/_dephell_zsh_autocomplete"
+  if [[ ! -e "${dephell_comp_file}" ||
+    "${dephell:P}" -nt "${dephell_comp_file}" ]]; then
+    # dephell потерпит неудачу, потому что не сможет найти zshrc, но это хорошо.
+    dephell self autocomplete 2> /dev/null || true
+  fi
+}
+
+# Добавляем дополнения из плагинов. Дополнения из репозитория dotfiles уже добавлены.
+fpath=(
+  ${fpath}
+  # Завершения из внешних репозиториев
+  "${PLUGINS_DIR}/conda-zsh-completion"
+  "${PLUGINS_DIR}/go-zsh-completion/src"
+  "${PLUGINS_DIR}/zsh-completions/src"
+  # Обновление 2018-12-07: похоже, что он уже включен в zsh 5.6.2, сохранив
+  # его на случай, если он понадобится старым системам.
+  "${PLUGINS_DIR}/oh-my-zsh/plugins/cargo"
+)
+
+if command_exists nix; then
+  fpath=(
+    ${fpath}
+    "${PLUGINS_DIR}/nix-zsh-completions"
+  )
+fi
+
+# Запустите `compinit`. Он должен быть запущен:
+# - После того как все каталоги с файлами завершения были добавлены в `fpath`
+# - После загрузки `zsh/complist`
+# - После определения всех виджетов завершения
+# - Перед любым вызовом функции `compdef`
+#
+# Приведенный ниже код используется для ускорения `compinit`. См:
+# https://gist.github.com/ctechols/ca1035271ad134841284
+function {
+  emulate -L zsh -o extendedglob
+  autoload -Uz compinit zrecompile
+  local zcompdump="${ZSH_CACHE_DIR}/zcompdump-${ZSH_VERSION}"
+  # Globbing params:
+  # - `#q` - это явный определитель glob, который заставляет работать globbing в рамках
+  # конструкции zsh [[ ]]
+  # - `N` превращает шаблон glob в ничто, если он не совпадает.
+  # (а не выбрасывает ошибку globbing).
+  # - 'mh+6' соответствует файлам (или директориям, или чему бы то ни было),
+  # возраст которых превышает 6 часов.
+
+  if [[ -n "${ZSHRC_REFRESH_COMP-}" || -n ${zcompdump}(#qNmh+6) ]]; then
+    compinit -i -d "${zcompdump}"
+    # compinit сообщает, что не обновляет временную метку, если zcompdump не был
+    # изменен, поэтому мы делаем это вручную.
+    touch "${zcompdump}"
+    # Перекомпилируем zcompdump в фоновом режиме, так как это не влияет на
+    # текущую сессию (мы уже запустили `compinit`).
+    # `-q` делает zrecompile тихим.
+    # `-p` гарантирует, что компиляция произойдет, даже если нет существующего
+    # скомпилированного файла.
+    zrecompile -q -p -- "${zcompdump}" &!
+  else
+    compinit -C -d "${zcompdump}"
+  fi
+  if [[ "${ZSHRC_REFRESH_COMP-}" == (precmd|preexec)* ]]; then
+    # https://stackoverflow.com/a/40014760/1014208
+    _reset_compinit() {
+      local c
+      for c in ${(v)_comps:#-*(-|-,*)}; do
+        unset -f "${c}" 2> /dev/null || true
+      done
+      compinit "${ZSH_CACHE_DIR}/zcompdump-refreshed-${ZSH_VERSION}"
+    }
+    autoload -Uz add-zsh-hook
+    add-zsh-hook "${ZSHRC_REFRESH_COMP}" _reset_compinit
+  fi
+}
+
+# Понимание завершений, написанных для bash.
+autoload -Uz bashcompinit && bashcompinit
+source_compiled "${BASH_CONFIG_DIR}/completion.sh"
+if [[ -r /opt/azure-cli/bin/az.completion.sh ]]; then
+  source /opt/azure-cli/bin/az.completion.sh
+fi
+
+function {
+  # Новые версии zsh уже поставляются с дополнениями npm.
+  if command_exists _npm; then
+    return
+  fi
+  local npm="$(command -v npm 2> /dev/null)" || return
+  # `npm completion` выводит bash-код для завершения, который должен быть выполнен
+  # напрямую, а не добавлять в fpath. Мы кэшируем этот вызов, поскольку он медленный.
+  local _npm_comp_file="${ZSH_CACHE_DIR}/npm_completion"
+  if [[ ! -e "${_npm_comp_file}" || "${npm:P}" -nt "${_npm_comp_file}" ]]; then
+    npm completion >| "${_npm_comp_file}"
+  fi
+  maybe-run-tracked-emulate -- source_compiled "${_npm_comp_file}"
+}
+
+# NOTE: По состоянию на 2022-05-19, используя zsh 5.9 и fzf 0.30.0, у меня возникли проблемы с
+# завершением или зависанием (поведение было непоследовательным), когда команда
+# выводилась по конвейеру, т. е. с использованием `cmd | _fzf_complete`. В комплекте с функциями завершения fzf [1] 
+# все используют подстановку процессов, и это работает.
+# [1] ${SUBMODULES_DIR}/terminal/fzf/shell/completion.zsh
+_fzf_complete_vim() {
+  # Чтобы вернуть только текстовые файлы, я могу использовать следующую команду:
+  # find . -type f -exec grep -Iq . {} \; -and -print
+  # Однако это намного медленнее, чем просто возвращать каждый файл без проверки, так что
+  # Сейчас я выбираю скорость.
+  _fzf_complete --multi "$@" < <(list-searched-files)
+}
+_fzf_complete_v() { _fzf_complete_vim "$@" }
+_fzf_complete_e() { _fzf_complete_vim "$@" }
+
+_fzf_complete_cd() {
+  _fzf_complete --multi "$@" < <(list-searched-files --list-dirs)
+}
+_fzf_complete_cd-fasd-fzf()   { _fzf_complete_cd "$@" }
+_fzf_complete_c()             { _fzf_complete_cd "$@" }
+_fzf_complete_cd-ranger()     { _fzf_complete_cd "$@" }
+
+_fzf_complete_git() {
+  _fzf_complete --multi "$@" < <(git-list-files 2> /dev/null)
+}
+_fzf_complete_g()     { _fzf_complete_git "$@" }
+_fzf_complete_gf()    { _fzf_complete_git "$@" }
+_fzf_complete_gfr()   { _fzf_complete_git "$@" }
+_fzf_complete_gd()    { _fzf_complete_git "$@" }
+_fzf_complete_gfd()   { _fzf_complete_git "$@" }
+_fzf_complete_gfrd()  { _fzf_complete_git "$@" }
+_fzf_complete_gdt()   { _fzf_complete_git "$@" }
+_fzf_complete_gfdt()  { _fzf_complete_git "$@" }
+_fzf_complete_gfrdt() { _fzf_complete_git "$@" }
+_fzf_complete_gl()    { _fzf_complete_git "$@" }
+_fzf_complete_gfl()   { _fzf_complete_git "$@" }
+_fzf_complete_gfrl()  { _fzf_complete_git "$@" }
+_fzf_complete_gla()   { _fzf_complete_git "$@" } 
+_fzf_complete_gfla()  { _fzf_complete_git "$@" }
+_fzf_complete_gfrla() { _fzf_complete_git "$@" }
+_fzf_complete_glp()   { _fzf_complete_git "$@" }
+_fzf_complete_gflp()  { _fzf_complete_git "$@" }
+_fzf_complete_gfrlp() { _fzf_complete_git "$@" }
+_fzf_complete_gls()   { _fzf_complete_git "$@" }
+_fzf_complete_gfls()  { _fzf_complete_git "$@" }
+_fzf_complete_gfrls() { _fzf_complete_git "$@" }
+
+_fzf_complete_ga(){
+  _fzf_complete --multi "$@" < <(git ls-files --modified 2> /dev/null)
+}
+_fzf_complete_gfa()   { _fzf_complete_ga "$@" }
+_fzf_complete_gfra()  { _fzf_complete_ga "$@" }
+_fzf_complete_gap()   { _fzf_complete_ga "$@" }
+_fzf_complete_gfap()  { _fzf_complete_ga "$@" }
+_fzf_complete_gfrap() { _fzf_complete_ga "$@" }
+
+FZF_COMPLETION_TRIGGER='jk'
+fzf_default_completion='complete-word'
+# Этот плагин перепривязывает tab к использованию fzf completion, если триггер завершения
+# найден, а в противном случае возвращается к ${fzf_default_completion}, который по умолчанию принимает значение
+# expand-or-complete.
+# +b означает не выводить предупреждения при перепривязке клавиш.
+maybe-run-tracked-emulate +b -- source_compiled \
+  "${SUBMODULES_DIR}/terminal/fzf/shell/completion.zsh"
+
+# Улучшение завершений из ${SUBMODULES_DIR}/terminal/fzf/shell/completion.zsh
+_fzf_complete_kill() {
+  _fzf_complete -m --preview 'echo {}' --preview-window down:3:wrap \
+      --min-height 15 --header-lines 1 -- "$@" < <(ps2)
+}
+
+# NOTE: По состоянию на 2018-12-29, завершение pip zsh не работает, поэтому я использую
+# завершение на bash (см. ниже).
+# Следующее завершение pip было сгенерировано с помощью:
+# pip completion --zsh
+#
+# # pip zsh completion start
+# function _pip_completion {
+#   local words cword
+#   read -Ac words
+#   read -cn cword
+#   reply=( $( COMP_WORDS="${words}[*]" \
+#              COMP_CWORD=$(( cword-1 )) \
+#              PIP_AUTO_COMPLETE=1 ${words}[1] ) )
+# }
+# compctl -K _pip_completion pip
+# # pip zsh completion end
+
+# Следующее завершение pip было сгенерировано с помощью:
+# pip completion --bash
+# pip bash completion start
+_pip_completion()
+{
+    COMPREPLY=( $( COMP_WORDS="${COMP_WORDS[*]}" \
+                   COMP_CWORD=${COMP_CWORD} \
+                   PIP_AUTO_COMPLETE=1 $1 ) )
+
+}
+complete -o default -F _pip_completion pip
+# pip bash completion end
+
+# Зависит от compdef, поэтому должен быть использован после вызова compinit.
+  # maybe-run-tracked-emulate -- source_compiled \
+# "${SUBMODULES_DIR}/lastpass-cli/contrib/lpass_bash_completion"
+
+# Зависит от compdef, поэтому должен быть использован после вызова compinit.
+# NOTE: Это значительно замедляет инициализацию оболочки, и я не особо
+# использую его в любом случае, поэтому отключаю его.
+# if command_exists pipenv; then
+#   eval "$(pipenv --completion)"
+# fi
+
+# Завершения для новой оболочки nix, основанной на bash и слегка модифицированной из:
+# https://github.com/spwhitt/nix-zsh-completions/issues/32#issuecomment-705315356
+# https://github.com/NixOS/nix/blob/master/misc/zsh/completion.zsh
+# TODO: Сделать так, чтобы это работало в отдельном файле в fpath.
+_nix() {
+  emulate -L zsh
+  local ifs_bk="$IFS"
+  local input=("${(Q)words[@]}")
+  local IFS=$'\n\t'
+  local res=($(NIX_GET_COMPLETIONS=$((CURRENT - 1)) "$input[@]"))
+  IFS="$ifs_bk"
+  local tpe="${${res[1]}%%>     *}"
+  local -a suggestions
+  declare -a suggestions
+  for suggestion in ${res:1}; do
+    # FIXME: Это не работает правильно, если слово предложения содержит `:`
+    # само по себе
+    suggestions+="${suggestion/ /:}"
+  done
+  if [[ "$tpe" == filenames ]]; then
+    compadd -f
+  fi
+  _describe 'nix' suggestions
+}
+compdef _nix nix
+
+# Установка завершения для команд и функций
+function {   
+  # На hera17 кажется, что эти определения должны быть после вызова compinit,
+  # иначе zsh жалуется, что `rg` не определен.
+  _set_same_completion() {
+    # Если команда не существует, compdef выведет ошибку.
+    compdef "$2=$1" 2> /dev/null || true
+  }
+  local cmd
+   for cmd in rgc rgcc rgcl rgl rgc-todos rgcl-todos tag; do
+    _set_same_completion rg "${cmd}"
+   done
+  
+  # _set_same_completion ssh ssh-et-tmxcs
+  _set_same_completion git git-https
+  _set_same_completion shenv gfexp
+  _set_same_completion shenv gfrexp
+  _set_same_completion xargs sensible-xargs
+  _set_same_completion watch watch-quoted
+  if [[ "${DISTRO}" == arch ]]; then
+   _set_same_completion pacman pacmate
+  fi
+  _set_same_completion ssh ssh-et
+  _set_same_completion ssh-et ssh-et-tmxcs
+  _set_same_completion ssh-et ssh-et-tmxns
+  _set_same_completion du duh
+  _set_same_completion conda mamba
+  _set_same_completion conda conda-or-mamba
+  _set_same_completion bazel bazel-in-docker
+}
+
+# TODO: добавить завершения в собственные git-команды (исполняемые файлы git-cmd в PATH),
+# see: https://stackoverflow.com/a/38850556/1014208
+
+# NOTE(2018-11-09): Отключено, потому что не используется.
+# zplug "zsh-users/zaw"
+
+################################################################################
+#                               Line editor utils                              #
+################################################################################
+_bindkey_insert_keymaps() {
+  bindkey -M emacs "$@"  
+  bindkey -M viins "$@"
+}
+
+_bindkey_vi_keymaps() {
+  bindkey -M viins "$@"
+  bindkey -M vicmd "$@"
+  # Должно ли это быть включено?
+  # bindkey -M viopp "$@"
+  bindkey -M visual "$@"
+}
+
+_bindkey_all_keymaps() {
+  bindkey -M emacs "$@"
+  _bindkey_vi_keymaps "$@"
+}
+
+_is_key_bound() {
+  [[ "$(bindkey "$1")" != *undefined-key* ]]
+}
+
+###############################################################################
+#                         Line editor general settings                        #
+###############################################################################
+# Символы, определяющие границу слова для редактирования строки.
+# Используются следующими виджетами:
+# backward-word, forward-word, backward-delete-word, forward-delete-word.
+# Не используется вариантами vi (vi-backward-word и т. д.).
+# WORDCHARS='*?+_-.[]~=;!#$%^(){}<>:@,\\'
+WORDCHARS='*?+_-.~=!#$%^@\\'
+# WORDCHARS='?+_-.~=!@#$%^&*\\|'
+# Отключите выход по EOF (Ctrl+d).
+setopt IGNOREEOF
+
+# Установите команду правки строки по умолчанию раньше, чтобы она не отменяла
+# привязки клавиш, заданные позже.
+bindkey -v
+# bindkey -e
+
+# Начиная с zsh 5.1, вставка в квадратных скобках должна работать из коробки.
+# source "${PLUGINS_DIR}/oh-my-zsh/plugins/safe-paste/"*.plugin.zsh
+# /usr/share/zsh/functions/Zle/bracketed-paste-magic
+# autoload -Uz bracketed-paste-magic
+# zle -N bracketed-paste bracketed-paste-magic
+
+# отключаем привязку клавиш по умолчанию в zsh-system-clipboard, мы перепривяжем только
+# то, что нам нужно. Привязки по умолчанию копируют каждое удаление (в том числе для
+# одиночного символа) в системный буфер обмена, что меня раздражает.
+# NOTE: По состоянию на 2020-02-06, zsh-system-clipboard не используется, поэтому он отключен. Я
+# хотел использовать его, чтобы определить команды удаления, которые копируются в
+# системный буфер обмена (аналогично команде M, которую я настроил в vim), но пока не
+# успел это сделать.
+# export ZSH_SYSTEM_CLIPBOARD_DISABLE_DEFAULT_MAPS=1
+# maybe-run-tracked-emulate -- source \
+#   "${PLUGINS_DIR}/zsh-system-clipboard/"*.plugin.zsh
+
+# NOTE: 5-я функция, упомянутая в zsh-autopair README[1], требует перепривязки
+# символа пробела, но это конфликтует с плагином zsh-abbrev-alias.
+# Поэтому я отменяю перепривязку пробела.
+# [1] https://github.com/hlissner/zsh-autopair#zsh-autopair
+AUTOPAIR_INHIBIT_INIT=1
+maybe-run-tracked-emulate -- source_compiled "${PLUGINS_DIR}/zsh-autopair/"*.plugin.zsh
+unset 'AUTOPAIR_PAIRS[ ]'
+# +b означает не выводить предупреждения при перепривязке клавиш.
+maybe-run-tracked-emulate +b -- autopair-init
+
+# source_compiled "${PLUGINS_DIR}/zsh-directory-history/"*.plugin.zsh
+
+# Должен загружаться последним.
+ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
+ZSH_AUTOSUGGEST_USE_ASYNC=1
+# Изначально я использовал fg=10, но это делает цвет автопредложения идентичным цвету
+# комментариев, в то время как этот немного отличается.
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE=fg=242
+# Скопировано с: https://github.com/romkatv/zsh4humans/blob/ed3ac2b25829865ca702ba088df06f59062e15f9/.zshrc#L274
+# Отключение очень медленной и непонятной функции
+ZSH_AUTOSUGGEST_MANUAL_REBIND=1
+maybe-run-tracked-emulate -- \
+  source_compiled "${PLUGINS_DIR}/zsh-autosuggestions/"*.plugin.zsh
+
+# +b означает, что мы разрешаем этому плагину привязывать ключи.
+maybe-run-tracked-emulate +b -- \
+  source_compiled "${SUBMODULES_DIR}/terminal/fzf/shell/key-bindings.zsh"
+# Переопределите функцию виджета fzf-history-widget, чтобы использовать мою сохраняемую историю.
+# Оригинальная функция находится по адресу:
+# https://github.com/junegunn/fzf/blob/master/shell/key-bindings.zsh
+fzf-history-widget() {
+  emulate -L zsh
+  local selected
+  # NOTE: Я заменил выражение "${(qqq)LBUFFER}" на "${LBUFFER//$/\\\$}"
+  # потому что иначе я получал две кавычки в исходном запросе.
+  # selected=$(conda-run shell_history \
+  #     "$HOME/.config/bash/history/shell_history_choose_line.py"\
+  #     --initial-query "${LBUFFER//$/\\\$}")
+  # selected="$(histcat select --initial-query "${LBUFFER//$/\\\$}")"
+  selected="$(histcat-select --query="${LBUFFER//$/\\\$}")"
+  local ret=$?
+
+  if [[ -n $selected ]]; then
+    LBUFFER="$selected"
+    # RBUFFER=""
+  fi
+  zle reset-prompt
+  return $ret
+}
+zle -N fzf-history-widget
+_bindkey_all_keymaps '^R' fzf-history-widget
+
+# Отмена/замена с помощью Alt+Shift+{_,+} во всех режимах.
+_bindkey_all_keymaps '^[_' undo
+_bindkey_all_keymaps '^[+' redo
+# Сделать так, чтобы CTRL-U удалял начало строки (как в bash), а не
+# всю строку.
+_bindkey_all_keymaps '^U' backward-kill-line
+# Циклическое цитирование текущего слова с помощью ALT-'.
+autoload -Uz cycle-quotes # в .zsh/functions/
+zle -N cycle-quotes
+_bindkey_all_keymaps "^['" cycle-quotes
+# C-x C-e для редактирования командной строки в EDITOR
+autoload -Uz edit-command-line
+zle -N edit-command-line
+_bindkey_all_keymaps '\C-x\C-e' edit-command-line
+# Сохраните текущую командную строку, введите другую команду и вернитесь к сохраненной
+# командной строке.
+_bindkey_all_keymaps '^[s' push-line-or-edit
+# Для совместимости с bash.
+_bindkey_all_keymaps '^[#' push-line-or-edit
+
+if command_exists fzf-completion; then
+  _default_completion=fzf-completion
+else
+  >&2 print -Pr -- '%F{yellow}fzf completions not available%f'
+  _default_completion=complete-word
+fi
+
+# При завершении с помощью табуляции показывать точки. При быстром завершении с помощью табуляции они будут
+# перезаписываться мгновенно, для длинных завершений табуляции есть обратная связь.
+# Изначально я использовал команды smam/rmam terminfo из [1] (раньше они копировались
+# из [2] и [3]), но они не поддерживаются в tmux [4], и, похоже, что
+# zsh4humans перешел на новый метод [5], который я сейчас и использую.
+# [1] https://github.com/romkatv/zsh4humans/blob/ed3ac2b25829865ca702ba088df06f59062e15f9/.zshrc#L199-L207
+# [2] https://github.com/romkatv/dotfiles-public/blob/6e57a9fe4c47061bdf51704005810e3b633f6fe9/dotfiles/bindings.zsh#L76
+# [3] http://code.stapelberg.de/git/configfiles/tree/zshrc
+# [4] https://github.com/tmux/tmux/issues/969
+# [5] https://github.com/romkatv/zsh4humans/blob/v5/fn/-z4h-show-dots
+_complete_with_dots() {
+  # NOTE: никаких "emulate -L zsh", потому что иначе мои пользовательские настройки завершения
+  # не будут работать.
+  # zmodload zsh/terminfo
+  # if (( $+terminfo[rmam] && $+terminfo[smam] )); then
+  #   echoti rmam
+  #   print -Pn "%B%F{white}...%f%b"
+  #   echoti smam
+  # fi
+  -z4h-cursor-hide() {}
+  autoload -Uz -- -z4h-show-dots
+  -z4h-show-dots "${LBUFFER}"
+  zle "${_default_completion}"
+  zle redisplay
+}
+zle -N _complete_with_dots
+_bindkey_insert_keymaps '\t' _complete_with_dots
+
+# Общие функции завершения файлов.
+_bindkey_all_keymaps '^F' fzf-file-widget
+
+# NOTE: По состоянию на 2019-11-04, я не думаю, что это действительно нужно, но я сохраняю это
+# на всякий случай. Удалю через несколько месяцев.
+# is_valid_aliases_cmd() {
+#   [ $# -eq 1 ] || return 1
+#   local cmd="$1"
+#   unset 'functions[__expand_aliases_tmp]'
+#   local err
+#   err=$(functions[__expand_aliases_tmp]="${cmd}" 2>&1 >> /dev/null)
+#   \grep -q '[a-zA-Z]' <<< "${err}" && return 2
+#   return 0  
+# }
+
+# См. https://unix.stackexchange.com/q/150649/126543
+_expand_command_aliases() {
+  cmd="$1"
+  functions[__expand_aliases_tmp]="${cmd}"
+  print -rn -- "${functions[__expand_aliases_tmp]#$'\t'}" 
+  unset 'functions[__expand_aliases_tmp]' 
+}
+_expand_aliases_widget() {
+  local expanded_cmd 
+  expanded_cmd=$(_expand_command_aliases "${BUFFER}") 
+  if [[ $? -eq 0 ]]; then 
+    BUFFER="${expanded_cmd}" 
+    CURSOR=$#BUFFER 
+  fi 
+}
+zle -N _expand_aliases_widget
+
+
+_bindkey_all_keymaps '^[^E' _expand_aliases_widget
+
+# Убедитесь, что терминал находится в режиме приложения, когда активен zle, поскольку
+# только тогда значения из $terminfo будут действительны. Основано на:
+# [1] https://github.com/romkatv/dotfiles-public/blob/393aa0bcb6524f4de060610f66485a40ee3435d1/dotfiles/bindings.zsh#L95
+# [2] https://github.com/robbyrussell/oh-my-zsh/blob/486fa1010df847bfd8823b4492623afc7c935709/lib/key-bindings.zsh#L5
+# NOTE: Начиная с 2020-03-05, эта функция отключена в пользу прямого использования терминала
+# escape-кодов, которые действительны в обоих режимах. См. также:
+# https://github.com/romkatv/zsh4humans/issues/7
+# function {
+#   zmodload zsh/terminfo
+#   if (( ${+terminfo[smkx]} && ${+terminfo[rmkx]} )); then
+#     function enable-term-application-mode() { emulate -L zsh; echoti smkx }
+#     function disable-term-application-mode() { emulate -L zsh; echoti rmkx }
+#     #   Это кажется более надежным, чем приведенный ниже код, но вызывает бесконечную рекурсию
+#     #   в моей установке.
+#     #   autoload -Uz add-zle-hook-widget
+#     #   zle -N enable-term-application-mode
+#     #   zle -N disable-term-application-mode
+#     #   add-zle-hook-widget line-init enable-term-application-mode
+#     #   add-zle-hook-widget line-finish disable-term-application-mode
+#     zle -N zle-line-init enable-term-application-mode
+#     zle -N zle-line-finish disable-term-application-mode
+#   fi
+# }
+
+# Установите привязки, специфичные для терминала
+function {
+  declare -A term_keys
+  # zmodload zsh/terminfo
+  # NOTE: Начиная с 2020-03-05, я использую escape-коды терминала напрямую, а не
+  # использования terminfo, поскольку записи terminfo действительны только в режиме приложения.
+  # См. также: https://github.com/romkatv/zsh4humans/issues/7
+  # См. https://github.com/romkatv/zsh4humans/issues/7
+  # backspace жестко закодирован на "^?", потому что именно это работает во всех терминальных
+  # эмуляторах, которые я тестировал (termite, kitty, urxvt), в то время как terminfo[kbs] установлен
+  # на '^H'.
+  # term_keys[backspace]="${terminfo[kbs]}"
+  # term_keys[home]="${terminfo[khome]}"
+  # term_keys[end]="${terminfo[kend]}"
+  # По умолчанию используются управляющие последовательности для xterm, и мы переопределяем их для
+  # конкретных терминалов ниже.
+  term_keys[backspace]='^?'
+  term_keys[delete]='^[[3~'
+  term_keys[up]='^[[A'
+  term_keys[down]='^[[B'
+  term_keys[left]='^[[D'
+  term_keys[right]='^[[C'
+  term_keys[home]='^[[H'
+  term_keys[end]='^[[F'
+  term_keys[ctrl_delete]='^[[3;5~'
+  term_keys[ctrl_backspace]='^H'
+  term_keys[shift_tab]='^[[Z'
+  # Эти значения работали в kitty, termite, terminator, xterm и alacrity,
+  # внутри и вне tmux, и в приложениях, и в обычном режиме (для
+  # xterm-подобных терминалов).
+  term_keys[ctrl_right]='^[[1;5C'
+  term_keys[ctrl_left]='^[[1;5D'
+  term_keys[pageup]='^[[5~'
+  term_keys[pagedown]='^[[6~'
+  if [[ ${TERM} == xterm-kitty ]]; then
+    :
+  elif [[ ${TERM} == (screen|tmux)* || ${TERM} == linux ]]; then
+    term_keys[home]='^[[1~'
+    term_keys[end]='^[[4~'
+  elif [[ ${TERM} == rxvt* ]]; then
+    term_keys[home]='^[[7~'
+    term_keys[end]='^[[8~'
+    term_keys[ctrl_delete]='^[[3^'
+    term_keys[ctrl_right]='^[Oc'
+    term_keys[ctrl_left]='^[Od'
+  fi
+
+  # Переведите код, генерируемый в моей раскладке клавиатуры из
+  # CapsLock+Alt+d (для Ctrl+Delete) в Ctrl+Delete.
+  # if [[ ${TERM} == (screen|tmux)* || ${TERM} == xterm-kitty ]]; then
+  #   _bindkey_all_keymaps -s '^[[3;3~' "${term_keys[ctrl_delete]}"
+  # elif [[ ${TERM} == xterm-termite ]]; then
+  #   _bindkey_all_keymaps -s '^[[3;7~' "${term_keys[ctrl_delete]}"
+  # fi
+
+  # Если NumLock выключен, переведите клавиши, чтобы они 
+  # отображались так же, как при включенном NumLock. 
+  bindkey -s '^[OM' '^M' # enter
+  bindkey -s '^[Ok' '+'
+  bindkey -s '^[Om' '-'
+  bindkey -s '^[Oj' '*'
+  bindkey -s '^[Oo' '/'
+  bindkey -s '^[OX' '='
+
+  # Преобразование кодов в режиме приложения xterm (smkx) в коды в
+  # коды в исходном режиме (rmkx). Таким образом, если xterm-подобный терминал переключается
+  # в режим приложения, привязки клавиш продолжат работать.
+  # NOTE: Раньше я определял их только в том случае, если $TERM - это xterm*,
+  # но это также необходимо при SSH на машинах DGX.
+  bindkey -s '^[OA' '^[[A'  # up
+  bindkey -s '^[OB' '^[[B'  # down
+  bindkey -s '^[OD' '^[[D'  # left
+  bindkey -s '^[OC' '^[[C'  # right
+  bindkey -s '^[OH' '^[[H'  # home
+  bindkey -s '^[OF' '^[[F'  # end
+
+  (( ${+term_keys[backspace]} )) &&
+      _bindkey_insert_keymaps "${term_keys[backspace]}" backward-delete-char-or-up-line
+  (( ${+term_keys[delete]} )) &&
+      _bindkey_insert_keymaps "${term_keys[delete]}" delete-char
+  # NOTE: Плагин zsh-history-substring-search загружается в конце
+  # файла zshrc, поскольку он должен быть загружен после zsh-syntax-highlighting, который  
+  # загружается только позже.
+  # NOTE: Нам нужно определить эти виджеты, которые мы изначально установили на zsh
+  # встроенным виджетам истории, поскольку виджет fast-syntax-highlighting пытается
+  # перепривязать все виджеты, и если мы их не определим, он будет жаловаться
+  # на то, что виджет недостаточно полный.
+  zle -N history-substring-search-up up-line-or-search
+  zle -N history-substring-search-down down-line-or-search 
+  # Вверх/вниз будет использовать введенный текст как ограничение подстроки.
+  (( ${+term_keys[up]} )) && 
+      _bindkey_all_keymaps "${term_keys[up]}" history-substring-search-up
+  (( ${+term_keys[down]} )) &&
+      _bindkey_all_keymaps "${term_keys[down]}" history-substring-search-down
+  (( ${+term_keys[home]} )) &&        
+      _bindkey_all_keymaps "${term_keys[home]}" beginning-of-line
+  (( ${+term_keys[end]} )) &&
+      _bindkey_all_keymaps "${term_keys[end]}" end-of-line
+  (( ${+term_keys[ctrl_delete]} )) &&
+      _bindkey_all_keymaps "${term_keys[ctrl_delete]}" delete-word
+  (( ${+term_keys[ctrl_backspace]} )) &&
+      _bindkey_all_keymaps "${term_keys[ctrl_backspace]}" backward-delete-word
+  (( ${+term_keys[shift_tab]} )) &&
+      _bindkey_insert_keymaps "${term_keys[shift_tab]}" reverse-menu-complete
+  (( ${+term_keys[ctrl_left]} )) &&
+      _bindkey_all_keymaps ${term_keys[ctrl_left]} backward-word
+  (( ${+term_keys[ctrl_right]} )) &&
+      _bindkey_all_keymaps ${term_keys[ctrl_right]} forward-word
+  # Ничего не делать при pageup and pagedown. Лучше, чем печатать '~'.
+  (( ${+term_keys[pageup]} )) &&
+      _bindkey_all_keymaps -s "${term_keys[pageup]}" ''  
+  (( ${+term_keys[pagedown]} )) &&
+      _bindkey_all_keymaps -s "${term_keys[pagedown]}" ''
+}
+
+# Скопировано с https://github.com/dp12/dotfiles/blob/master/zsh/.zshrc#L135
+# Сделайте Ctrl-Z переключением между оболочкой и последним процессом.
+_ctrl_z_widget () {
+  if [[ -n "${PREBUFFER}${BUFFER}" ]]; then
+    zle push-input
+    zle clear-screen
+  else
+    BUFFER='fg'
+    zle accept-line
+  fi
+}
+zle -N _ctrl_z_widget
+_bindkey_all_keymaps '^Z' _ctrl_z_widget
+
+_DO_ENTER_CMD=(ll)
+_newline_widget() {
+  if [[ -z "${PREBUFFER}${BUFFER}" ]]; then
+    BUFFER="${_DO_ENTER_CMD[@]}"
+  fi
+  zle accept-line
+}
+zle -N _newline_widget
+_bindkey_all_keymaps '^M' _newline_widget
+
+_copy_buffer_to_clipboard() {
+ print -rn -- "${PREBUFFER}${BUFFER}" | xsel --input --clipboard
+ [ -n "${TMUX}" ] && tmux display-message 'Line copied to clipboard!'
+}
+zle -N _copy_buffer_to_clipboard
+
+# Отвязываем C-Q, который установлен по умолчанию и будет конфликтовать с привязкой копирования буфера обмена.
+_is_key_bound '^Q' && bindkey -r '^Q'
+_bindkey_all_keymaps '^Qy' _copy_buffer_to_clipboard
+
+# Отслеживает позицию аргумента для других виджетов ниже.
+typeset -g _insert_last_word_offset=-1
+_reset_insert_last_word_offset() {
+  _insert_last_word_offset=-1
+}
+add-zsh-hook precmd _reset_insert_last_word_offset
+
+_bindkey_all_keymaps '^[.' insert-last-word
+
+# Обратный эффект от _insert-last-word-widget: вставляет последнее слово из
+# предыдущей строки. Полезно, если я вызываю insert-last-word слишком много раз
+# и случайно пропустил аргумент, на который нацелился.
+_insert-last-word-reverse-widget() {
+  emulate -L zsh
+  zle insert-last-word -- +1 "${_insert_last_word_offset}"
+}
+zle -N _insert-last-word-reverse-widget
+_bindkey_all_keymaps '^[>' _insert-last-word-reverse-widget
+
+_insert-left-hist-word-widget() {
+  emulate -L zsh
+  ((_insert_last_word_offset -= 1))
+  zle insert-last-word -- 0 "${_insert_last_word_offset}"
+}
+zle -N _insert-left-hist-word-widget
+_bindkey_all_keymaps '^[,' _insert-left-hist-word-widget
+
+_insert-right-hist-word-widget() {
+  эмулировать -L zsh
+  ((_insert_last_word_offset += 1))
+  zle insert-last-word -- 0 "${_insert_last_word_offset}"
+}
+zle -N _insert-right-hist-word-widget
+_bindkey_all_keymaps '^[/' _insert-right-hist-word-widget
+
+
+# NOTE: После реализации этой функции я обнаружил, что в zsh есть функция
+# `split-shell-arguments, которая может быть использована для аналогичных целей, но также
+# учитывает истинные аргументы оболочки (поэтому пробелы внутри кавычек считаются частью
+# слова).
+# Примеры для состояния редактирования строки и ожидаемого выделенного слова , где "$"
+# обозначает конец BUFFER:
+#
+# BUFFER |$
+# CURSOR |0
+# Word   |""
+#
+# BUFFER |a$
+# CURSOR |0
+# Word   |"a"
+#
+# BUFFER |a$
+# CURSOR | 1
+# Word   |"a"
+#
+# BUFFER |ab$
+# CURSOR | 1
+# Word   |"ab"
+#
+# BUFFER |a $
+# CURSOR |  2
+# Word   |""
+#
+# BUFFER |a b  c$
+# CURSOR |    4
+# Word   |""
+_get_zle_cursor_word_bounds() {
+  emulate -L zsh
+  local b=${CURSOR}
+  local e=${CURSOR}
+  # >&2 echo
+  # >&2 echo "CURSOR=$CURSOR, #BUFFER=$#BUFFER, BUFFER[CURSOR]=${BUFFER:${CURSOR}:1}, b=$b, BUFFER[b]=${BUFFER:${b}:1}" | cat -A
+  while ((b > 0)) && [[ "${BUFFER:$((b-1)):1}" =~ [a-zA-Z_-] ]]; do
+    ((b -= 1))
+  done
+  while ((e < $#BUFFER)) && [[ "${BUFFER:$((e)):1}" =~ [a-zA-Z_-] ]]; do
+    ((e += 1))
+  done
+  # >&2 echo "b=$b, e=$e, word=${BUFFER:${b}:$((e-b))}" | cat -A
+  echo "${b} ${e}"
+}
+
+_replace_arg_with_selected_command() {
+  local selected
+  if selected="$(select-command --query="$1")" && [[ -n "${selected}" ]]; then
+    REPLY="${selected}"
+    return 0
+  fi
+  return 1
+}
+
+# Я пытался реализовать _select_command_widget с помощью modify-current-argument, но
+# это не очень хорошо работает, потому что всегда пытается соответствовать аргументу, даже
+# если курсор не находится на нем, и в этом случае я на самом деле не хочу его изменять,
+# а вместо этого вставить новое слово.
+# autoload -Uz modify-current-argument
+# zle -N modify-current-argument
+_select_command_widget() {
+  emulate -L zsh
+  # zle modify-current-argument _replace_arg_with_selected_command
+  local bounds
+  bounds=($(_get_zle_cursor_word_bounds)) || return $?
+  local b="${bounds[1]}"
+  local e="${bounds[2]}"
+  local query="${BUFFER:${b}:$((e-b))}"
+  # Иногда select-command возвращает успех, хотя выборка была
+  # отменена, и я не могу воспроизвести это при изолированном запуске. 
+  if selected="$(select-command --query="${query}")" &&
+      [[ -n "${selected}" ]]; then
+    BUFFER="${BUFFER:0:${b}}${selected}${BUFFER:${e}}"
+    ((CURSOR = b + ${#selected}))
+  fi
+}
+zle -N _select_command_widget
+# Выбор команды с помощью fzf
+_bindkey_all_keymaps '\C-x\C-x' _select_command_widget
+
+backward-delete-char-or-up-line() {
+  emulate -L zsh
+  if [[ -n "${LBUFFER}" ]]; then
+    zle backward-delete-char
+  elif [[ -n "${PREBUFFER}" ]]; then
+    local len=$(( ${#PREBUFFER} -1 ))
+    # Основано на /usr/share/zsh/functions/Zle/edit-command-line
+    print -Rz - "${PREBUFFER:0:${len}}"
+    zle send-break
+  fi
+}
+zle -N backward-delete-char-or-up-line
+
+# Этот виджет представляет собой более тонкую версию функции backward-delete-work, которая ведет себя аналогично
+# движениям vi.
+# Стандартный вариант backward-delete-word слишком агрессивен. Например, если символы
+# за курсором - "abc:cde", он удалит все символы вместо того, чтобы
+# остановится на двоеточии.
+# NOTE: По состоянию на 2020-03-01 это, похоже, не нужно, поскольку я могу просто использовать
+# vi-backward-kill-word напрямую.    
+# _soft_backward_delete_word() {
+#   emulate -L zsh
+#   zle vi-backward-kill-word -K vicmd
+# }
+#
+zle -N _soft_backward_delete_word
+# _bindkey_all_keymaps '^W' _soft_backward_delete_word
+
+backward-delete-word-multiline() {
+  emulate -L zsh
+  if [[ -n "${LBUFFER}" ]]; then
+    local len=${#LBUFFER}
+    if [[ "${LBUFFER:$((len-1)):${len}}" == $'\n' ]]; then
+      zle backward-delete-char
+    fi
+    # NOTE: после send-break функция vi-backward-kill-word больше не работает,
+    # пока не будет прервано текущее редактирование.
+    # zle _soft_backward_delete_word
+    # zle vi-backward-kill-word
+    zle vi-backward-delete-word
+  elif [[ -n "${PREBUFFER}" ]]; then
+    local len=${#PREBUFFER}
+    # Основано на /usr/share/zsh/functions/Zle/edit-command-line
+    print -Rz - "${PREBUFFER:0:${$((len-1))}}"
+    # send-break необходим для выхода из режима многострочного редактирования.
+    zle send-break
+  fi
+}
+zle -N backward-delete-word-multiline
+_bindkey_all_keymaps '^W' backward-delete-word-multiline
+
+# Скопировано из:
+# https://github.com/romkatv/dotfiles-public/blob/73c8fc684a3a0b51463d5f0d344acc4ade5daf79/dotfiles/bindings.zsh#L75-L88
+redraw-prompt() {
+  emulate -L zsh
+  local chpwd=${1:-0} f
+  if (( chpwd )); then
+    for f in chpwd $chpwd_functions; do
+      (( $+functions[$f] )) && $f &>/dev/null
+    done
+  fi
+  for f in precmd $precmd_functions; do
+    (( $+functions[$f] )) && $f &>/dev/null
+  done
+  zle .reset-prompt
+  zle -R
+}
+zle -N redraw-prompt
+
+_cd_ranger_widget() {
+  # local saved_buffer="${BUFFER}"
+  # local saved_cursor="${CURSOR}"
+  # BUFFER=''
+  # Определяется в functions.sh
+  cd-ranger < "${TTY}" > "${TTY}"
+  # BUFFER="${saved_buffer}"
+  # CURSOR="${saved_cursor}"
+  zle redraw-prompt 1
+}
+zle -N _cd_ranger_widget
+
+_cd_broot() {
+  br --only-folders --conf \
+    "${REPO_ROOT}/.config/broot/conf.hjson;${REPO_ROOT}/.config/broot/cd.hjson"
+  zle redraw-prompt 1
+}
+zle -N _cd_broot
+
+# https://github.com/Vifon/deer
+autoload -Uz deer
+declare -Ag DEER_KEYS
+# Используйте ijkl для навигации
+DEER_KEYS[down]=k
+DEER_KEYS[up]=i
+DEER_KEYS[page_down]=K
+DEER_KEYS[page_up]=I
+DEER_KEYS[leave]=j
+DEER_KEYS[append_path]=p
+DEER_KEYS[append_abs_path]=P
+DEER_KEYS[toggle_hidden]=h
+DEER_KEYS[rifle]=o
+DEER_KEYS[chdir]=q
+DEER_KEYS[quit]=Q
+
+# Определите новый виджет, который обновляет приглашение после получения информации
+# о существовании директории, поскольку мы могли сменить рабочую директорию.
+my-deer-widget() {
+  zle deer
+  zle redraw-prompt 1
+}
+zle -N deer
+zle -N my-deer-widget
+
+# NOTE: fzf уже привязывает alt+c
+# _bindkey_all_keymaps '^[d' _cd_ranger_widget
+_bindkey_all_keymaps '^[d' _cd_broot
+_bindkey_all_keymaps '^[e' my-deer-widget
+
+# NOTE 2018-12-08: плагин fasd, похоже, имеет значительное время загрузки (0,2 с
+# на zeus18) и он практически не используется, поэтому пока отключен.
+# source_compiled "${SUBMODULES_DIR}/terminal/fasd/"*.plugin.zsh
+# # C-x C-f для выполнения fasd-complete-f (only files)
+# _bindkey_insert_keymaps '^X^F' fasd-complete-f
+# # C-x C-d to do fasd-complete-d (only dirs)
+# _bindkey_insert_keymaps '^X^D' fasd-complete-d
+
+################################################################################
+#                         Line editor vi modes                                 #
+################################################################################
+# Команды, скопированные из стандартной карты клавиш emacs.
+_bindkey_vi_keymaps '^P' up-history
+_bindkey_vi_keymaps '^N' down-history
+_bindkey_vi_keymaps '^A' beginning-of-line
+_bindkey_vi_keymaps '^E' end-of-line
+_bindkey_vi_keymaps '^Y' yank
+# bindkey -M viins '^W'   _soft_backward_delete_word
+bindkey -M viins '^K'    kill-line
+bindkey -M viins '^U'    backward-kill-line
+# NOTE: По состоянию на 2019-06-05, я не использую <C-d>, и по умолчанию
+# delete-char-or-list меня смущает, поэтому я его отменяю.
+# bindkey -M viins '^D' delete-char-or-list
+_is_key_bound '^D' && bindkey -r '^D'
+bindkey -M viins '^G'     send-break
+bindkey -M viins '^V'     quoted-insert
+
+bindkey -M vicmd '/'      vi-history-search-forward
+bindkey -M vicmd '?'      vi-history-search-backward
+bindkey -M vicmd 'w'      backward-word
+bindkey -M vicmd 'W'      vi-backward-blank-word
+bindkey -M vicmd 'e'      forward-word
+bindkey -M vicmd 'E'      vi-forward-blank-word
+bindkey -M vicmd 'Y'      vi-yank-eol
+bindkey -M vicmd 'yy'     vi-yank-whole-line
+# Навигация с ijkl
+# bindkey -M vicmd  'i' up-line-or-history
+bindkey -M vicmd  'i' history-beginning-search-backward
+bindkey -M visual 'i' history-beginning-search-backward
+bindkey -M vicmd  'j' backward-char
+bindkey -M visual 'j' backward-char
+# bindkey -M vicmd  'k' down-line-or-history
+bindkey -M vicmd  'k' history-beginning-search-forward
+bindkey -M visual 'k' history-beginning-search-forward 
+bindkey -M vicmd  'l' forward-char
+bindkey -M visual 'l' forward-char
+
+bindkey -M vicmd  'i' vi-insert
+
+# Отмена/замена с помощью {,Alt}+u в режиме vicmd.
+bindkey -M vicmd  'u' undo
+bindkey -M vicmd  '^[u' redo
+
+# NOTE: Я не смог связать последовательности клавиш из 3 и более символов,
+# поэтому мне пришлось отступить от своего обычая vim использовать
+# Space+i в качестве замены i в визуальном режиме.
+
+# Based on: /usr/share/zsh/functions/Zle/surround
+autoload -Uz surround
+zle -N delete-surround surround
+zle -N add-surround surround
+zle -N change-surround surround
+bindkey -M vicmd sc change-surround
+bindkey -M vicmd sd delete-surround
+bindkey -M vicmd sa add-surround
+
+# Скопировано из: /usr/share/zsh/functions/Zle/select-quoted
+autoload -Uz select-quoted
+zle -N select-quoted
+for m in visual viopp; do
+  for c in {a,i}{\',\",\`}; do
+    bindkey -M ${m} ${c} select-quoted
+  done
+done
+
+# Скопировано из: /usr/share/zsh/functions/Zle/select-bracketed
+autoload -Uz select-bracketed
+zle -N select-bracketed
+for m in visual viopp; do
+  for c in {a,i}"${(s..)^:-'()[]{}<>bB'}"; do
+    bindkey -M ${m} ${c} select-bracketed
+  done
+done
+
+# Vim-подобный эскейпинг jj/jk keybind
+# bindkey -M viins 'jj' vi-cmd-mode
+# bindkey -M viins 'jk' vi-cmd-mode
+
+# Удалите все привязки клавиш режима вставки vi, начинающиеся с ESC, чтобы не было
+# задержки при переключении в командный режим (иначе zle будет ждать проверки до окончания 
+# вводимой команды).
+# bindkey -rpM viins '^['
+
+################################################################################
+#                                  Appearance                                  #
+################################################################################
+# Установите solarized dircolors из https://github.com/seebi/dircolors-solarized
+function {
+  local file="${SUBMODULES_DIR}/terminal/dircolors-solarized/dircolors.256dark"
+  if [[ -r "${file}" ]]; then
+    eval -- "$(dircolors --sh -- "${file}")"
+  fi
+}
+# Должно быть выполнено после вызова dircolors.
+zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
+
+zstyle ':completion:*:corrections' format ' %F{green}-- %d (errors: %e) --%f'
+zstyle ':completion:*:descriptions' format ' %F{yellow}-- %d --%f'
+zstyle ':completion:*:messages' format ' %F{purple} -- %d --%f'
+zstyle ':completion:*:warnings' format ' %F{red}-- no matches found --%f'
+zstyle ':completion:*:default' list-prompt '%S%M matches%s'
+zstyle ':completion:*' format ' %F{yellow}-- %d --%f'
+
+zstyle ':completion:*:*:*:*:processes' \
+  command 'ps -w -u ${USER} -o pid,%cpu,%mem,command '
+zstyle ':completion:*:*:kill:*' format ' %F{yellow}PID | CPU | RAM | COMMAND%f'
+zstyle ':completion:*:*:kill:*:processes' list-colors \
+  '=(#b) #([0-9]#) ([0-9a-z-]#)*=01;36=0=01'
+
+# Команды, чье суммарное время выполнения пользователем и системой (измеряется в секундах)
+# больше этого значения, для них будет напечатана статистика по времени.
+REPORTTIME=10
+# Формат отчетов о времени выполнения процессов с ключевым словом time. %J - имя
+# задания.
+TIMEFMT="%J | %*E total | %U user | %S system | %P cpu | %M MB memory"
+# Показывать идентификатор процесса при выводе списка заданий.
+setopt LONG_LIST_JOBS
+
+# Включите подсветку по умолчанию плюс подсветку соответствующих скобок.
+ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets)
+ZSH_HIGHLIGHT_MAXLENGTH=1024
+# run-tracked flags:
+# - +w означает не выводить предупреждения при переопределении виджетов.
+# Этот плагин переопределяет все виджеты, чтобы добавить крючок для подсветки синтаксиса.
+# - +a означает не выводить предупреждения при определении псевдонимов.
+# Этот плагин определяет `alias fsh-alias=fast-theme`, который я не использую, но
+# не беспокоит меня.
+# - +f означает не выводить предупреждения при переопределении функций.
+# Нужен только в том случае, если этот плагин загружается после zsh-history-substring-search,
+# поскольку последний определяет две функции с одинаковым именем
+# (`_zsh_highlight` и `_zsh_highlight_bind_widgets`), хотя согласно
+# его исходному коду, это сделано специально для их интеграции. Обратите внимание, что в
+# документация к плагину сообщает, что загружать zsh-history-substring-search
+# после zsh-syntax-highlighting, хотя у меня он все равно работал, когда я 
+# поменял их порядок.
+# NOTE: Этот плагин должен быть загружен до zsh-history-substring-search.
+# NOTE 2018-05-24: Я столкнулся с проблемой, когда при вводе чего-то, а затем "*" (например.
+# например, "printf *") замораживает ввод, поэтому я понизил версию до 0.5.0 и это
+# была решена.
+# ОБНОВЛЕНИЕ 2018-11-18: Эта проблема все еще не решена, но теперь я перешел на
+# fast-syntax-highlighting.
+# По состоянию на 2020-05-16, я вернулся к zsh-syntax-highlighting, потому что проблема
+# выше больше не воспроизводится, а fast-syntax-highlighting работает очень медленно
+# после ввода 'hub' в zeus18.
+# По состоянию на 2020-05-19 я вернулся к fast-syntax-highlighting, потому что.
+# zsh-syntax-highlighting не распознает псевдоним "pg" правильно, и я
+# нашел обходной путь для решения этой проблемы с хабом.
+# По состоянию на 2021-08-02 я возвращаюсь к zsh-syntax-highlighting, потому что: 
+# - я нашел решение проблемы с псевдонимом "pg". 
+# - zsh4humans использует его
+# - Он кажется лучше поддерживается при просмотре недавней истории
+# - fast-syntax-highlighting портит ввод после следующей 
+# команда: "git --format='%(a=)'"
+# По состоянию на 2021-10-30, репо с fast-syntax-highlighting исчезло с
+# github: 
+# https://www.reddit.com/r/zsh/comments/qinb6j/httpsgithubcomzdharma_has_suddenly_disappeared_i/
+maybe-run-tracked +w +a -- \
+  source_compiled "${PLUGINS_DIR}/zsh-syntax-highlighting/"*.plugin.zsh
+# maybe-run-tracked +w +a -- \
+#   source_compiled "${PLUGINS_DIR}/fast-syntax-highlighting/"*.plugin.zsh    
+# fast-syntax-higlighting очень медленный для хаба, что вызывает задержки при наборе текста, но
+# git-версия работает нормально.  
+if [[ -n "${FAST_HIGHLIGHT-}" ]]; then
+  FAST_HIGHLIGHT[chroma-hub]="${FAST_HIGHLIGHT[chroma-git]-}"
+fi
+# FAST_HIGHLIGHT[chroma-hub]="${FAST_HIGHLIGHT[chroma-git]}"
+# Без этого комментарии не будут видны с моими цветами терминала.
+command_exists fast-theme && fast-theme XDG:overlay.ini
+
+# NOTE: Этот плагин должен быть загружен после zsh-syntax-highlighting.
+# +w означает не выводить предупреждения при переопределении виджетов. 
+# Мы добавили начальные определения для виджетов, которые использует этот плагин, потому что они
+# были привязаны к ключам, а fast-syntax-highlighting требует, чтобы все привязанные виджеты
+# быть полностью определенными.
+maybe-run-tracked +w -- source_compiled \
+  "${PLUGINS_DIR}/zsh-history-substring-search/"*.plugin.zsh
+
+maybe-run-tracked -- source_compiled "${ZSHENV_DIR}/p10k.zsh"
+# Настройки при запуске от имени root.
+if ((EUID == 0)); then
+  # Показать фон всего приглашения темно-красным. Уродливо, но эффективно.
+  typeset -g POWERLEVEL9K_BACKGROUND=124
+  # Показываем контекст (имя user@hostname) и заполнитель между левым и правым приглашениями
+  # красным цветом, чтобы было трудно пропустить.
+  # declare -g POWERLEVEL9K_CONTEXT_ROOT_FOREGROUND=196
+  # declare -g POWERLEVEL9K_MULTILINE_FIRST_PROMPT_GAP_FOREGROUND=196
+fi
+typeset -g POWERLEVEL9K_RANGER_VISUAL_IDENTIFIER_EXPANSION='  ranger:'
+# Так таблички состояния VCS будут выглядеть лучше.
+# POWERLEVEL9K_VCS_DISABLE_GITSTATUS_FORMATTING=false
+# +o означает не печатать предупреждения при установке опций.
+maybe-run-tracked +o -- source_compiled \
+  "${PLUGINS_DIR}/powerlevel10k/powerlevel10k.zsh-theme"
+
+################################################################################
+#                             Notifications                                    #
+################################################################################
+# Сообщите мне немедленно о завершении работы
+setopt NOTIFY
+
+# Уведомления поддерживаются только в X11. В других случаях, например, в Linux
+# консоль, использование плагина приведет к ошибке, которой мы хотим избежать.
+if uses_local_graphics && [[ -n "${DISPLAY-}" ]]; then
+  maybe-run-tracked-emulate -- source_compiled \
+    "${PLUGINS_DIR}/zsh-notify/notify.plugin.zsh"
+fi
+
+_zsh_notify_format_duration() {
+  emulate -L zsh
+  local total_seconds="$1"
+  local hours minutes seconds
+  hours=$((total_seconds / (60 * 60)))
+  minutes=$(((total_seconds - hours * 60 * 60) / 60))
+  seconds=$((total_seconds % 60))
+  if ((hours > 0)); then
+    printf '%sh:%sm:%ss' "${hours}" "${minutes}" "${seconds}"
+  elif ((minutes > 0)); then
+    printf '%sm:%ss' "${minutes}" "${seconds}"
+  else
+    printf '%ss' "${seconds}"
+  fi
+}
+
+_zsh_notify_custom_notifier() {
+  emulate -L zsh
+  # lib предоставляет format-time и notification-title
+  # source "${PLUGINS_DIR}/zsh-notify/lib"
+  # local type time_elapsed title message
+  # type="$1"
+  # time_elapsed="$(format-time "$2")"
+  local result="$1"
+  local full_command title_command message
+  full_command="$(<&0)"
+  if ((${#full_command} > 20)); then
+    title_command="$(printf '%s...' "${full_command:0:17}")"
+    message="${full_command}"
+  else
+    title_command="${full_command}"
+    message=''
+  fi
+  local duration="$(_zsh_notify_format_duration "$2")"
+  local title
+  title="$(printf '%s : %s after %s' \
+    "${title_command}" "${result}" "${duration}")"
+
+  if [[ "${result}" == 'success' ]]; then
+    local notify_cmd='notify-success'
+  else
+    local notify_cmd='notify-failure'
+  fi
+  command "${notify_cmd}" "$title" "$message"
+}
+# NOTE: опции zstyle должны быть установлены после загрузки плагина.
+zstyle ':notify:*' notifier _zsh_notify_custom_notifier 
+zstyle ':notify:*' command-complete-timeout 20
+zstyle ':notify:*' always-notify-on-failure false
+zstyle ':notify:*' always-check-active-window true
+zstyle ':notify:*' enable-on-ssh false
+function {
+  emulate -L zsh
+  if [[ "${HOST_ALIAS-}" == hera11 ]]; then
+    local blacklist_regex='.'
+  else
+    local blacklisted_cmds=('editor' 'vim' 'nvim' 'less' 'git' 'ranger' 'bash'
+      'zsh' 'gqui' '.*[iI][pP]ython' 'g3python' 'man' 'tmux' 'fg' 'fpp' 'yank'
+      'iblaze' 'ovpn' 'ssh' 'zsh' 'fzf' 'dmesg' 'journalctl')
+    local blacklist_regex='\b('"$(join_by '|' "${blacklisted_cmds[@]}")"')\b'
+  fi
+  zstyle ':notify:*' blacklist-regex "${blacklist_regex}"
+}
+
+################################################################################
+#                    Interactive functions and aliases                         #
+################################################################################
+
+# Этот плагин должен перепривязать пробел для расширения псевдонимов.
+# +b означает не выводить предупреждения при перепривязке ключей.
+maybe-run-tracked-emulate +b -- source_compiled \
+  "${PLUGINS_DIR}/zsh-abbrev-alias/"*.plugin.zsh
+# NOTE: alias-tips не работает с source_compiled/zcompile, только с постоянным
+# источником.
+maybe-run-tracked-emulate -- source \
+  "${PLUGINS_DIR}/alias-tips/"*.plugin.zsh
+# https://github.com/AndydeCleyre/zpy/issues/18#issuecomment-1146508441
+zstyle ':zpy:*' exposed-funcs zpy
+zstyle ':zpy:*' pip-compile-args --generate-hashes --allow-unsafe
+maybe-run-tracked-emulate -- source_compiled "${PLUGINS_DIR}/zpy/"*.plugin.zsh
+# +a означает не выводить предупреждения при определении псевдонимов.
+maybe-run-tracked-emulate +a -- source_compiled \
+  "${BASH_CONFIG_DIR}/functions.sh"
+maybe-run-tracked-emulate +a -- source_compiled \
+  "${ZSHENV_DIR}/functions.zsh"
+
+if command_exists broot; then
+  autoload -Uz br
+fi
+
+################################################################################
+#                            Local settings                                    #
+################################################################################
+
+if [[ -f "${ZSHENV_DIR}/zshrc_private.zsh" ]]; then
+  source_compiled "${ZSHENV_DIR}/zshrc_private.zsh"
+fi
+
+################################################################################
+#                             End debugging                                    #
+################################################################################
+if [[ -n ${ZSHRC_ENABLE_PROFILING_BY_LINE} ]]; then
+  unsetopt XTRACE
+  # Восстановите stderr по описанию файла, сохраненному в stderr_fd_dup.
+  exec 2>&"${stderr_fd_dup}" {stderr_fd_dup}>&-
+  unset stderr_fd_dup
+elif [[ -n ${ZSHRC_ENABLE_PROFILING} ]]; then
+  profiling_log_file="${HOME}/zsh_startup.$$.log"
+  printf 'Writing profiling data to file: %s\n' "${profiling_log_file}"
+  zprof > "${profiling_log_file}"
+fi
