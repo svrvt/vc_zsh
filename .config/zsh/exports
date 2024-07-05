@@ -311,4 +311,4 @@ export READER="zathura"
 export PASSWORD_STORE_ENABLE_EXTENSIONS=true
 
 # vim: ft=zsh syntax=sh
-
+export SYSTEMD_EDITOR=nvim

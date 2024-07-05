@@ -9,33 +9,46 @@ alias v="nvim"
 # {{{ Use bat and exa when they are installed.
 
 [ -f /usr/bin/batcat ] && alias cat='batcat'
-# [ -f /usr/bin/exa ] && alias ls='exa'
-[ ! -f /usr/bin/exa ] && alias ls='ls --color=auto'
 
 # -------------------------------------------------------------------------- }}}
 # {{{ List
 if programExists exa; then
-	alias la="exa -laghm@ --all --icons --color=always"
-	alias ll="exa -lghm@ --icons"
+	# alias ls='exa'
+	alias la="exa -laghm@ --group-directories-first --all --icons --color=always"
+	alias ll="exa -lghm@ --group-directories-first --icons"
 	alias l="exa --icons"
-	alias l.="exa -a | egrep '^\.'"
+	l.() {
+		if [ $# = 0 ]; then
+			exa -a | grep -E '^\.'
+		else
+			exa -a "$@" | grep -E '^\.'
+		fi
+	}
+  alias lld="exa -lD --no-filesize --no-permissions --octal-permissions --no-time"
 else
+	# alias ls='ls --color=auto'
 	alias la='ls -la'
 	alias ll='ls -l'
 	alias l='ls'
-	alias l.="ls -A | egrep '^\.'"
+	l.() {
+		if [ $# = 0 ]; then
+			command ls -A | grep -E '^\.'
+		else
+			command ls -A "$@" | grep -E '^\.'
+		fi
+	}
 fi
 
-alias l1='ls -1'
-alias lad='ls -lad .*'
+# alias l1='ls -1'
+alias lad='command ls -lad *'
 
 # alias la="ls -AXb --group-directories-first --sort=extension"
 # alias la="lsd -A --group-dirs first --classify"
-alias ldir="ls -d */"
+# alias ldir="ls -d */"
 
 # Alias's for multiple directory listing commands
 # alias la='ls -Alh'                # show hidden files
-# alias ls='ls -aFh --color=always' # add colors and file type extensions
+# alias ls='command ls -aFh --color=always' # add colors and file type extensions
 alias lx='ls -lXBh'      # sort by extension
 alias lk='ls -lSrh'      # sort by size
 alias lc='ls -lcrh'      # sort by change time
@@ -45,9 +58,9 @@ alias lt='ls -ltrh'      # sort by date
 alias lm='ls -alh |more' # pipe through 'more'
 alias lw='ls -xAh'       # wide listing format
 # alias ll='ls -Fls'               # long listing format
-alias labc='ls -lap' #alphabetical sort
+alias labc='command ls -lap' #alphabetical sort
 # alias lf="ls -l | egrep -v '^d'" # files only
-alias ldir="ls -l | egrep '^d'" # directories only
+alias ldir="command ls -l | egrep '^d'" # directories only
 
 # -------------------------------------------------------------------------- }}}
 # {{{ Grep
@@ -102,11 +115,11 @@ alias tobash="sudo chsh $USER -s /usr/bin/bash && echo 'Now log out.'"
 alias tozsh="sudo chsh $USER -s /usr/bin/zsh && echo 'Now log out.'"
 
 #switch between lightdm and sddm
-alias tolightdm="sudo apt install lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings --noconfirm --needed ; sudo systemctl enable lightdm.service -f ; echo 'Lightm is active - reboot now'"
-alias tosddm="sudo apt install sddm --noconfirm --needed ; sudo systemctl enable sddm.service -f ; echo 'Sddm is active - reboot now'"
-alias toly="sudo apt install ly --noconfirm --needed ; sudo systemctl enable ly.service -f ; echo 'Ly is active - reboot now'"
-alias togdm="sudo apt install gdm --noconfirm --needed ; sudo systemctl enable gdm.service -f ; echo 'Gdm is active - reboot now'"
-alias tolxdm="sudo apt install lxdm --noconfirm --needed ; sudo systemctl enable lxdm.service -f ; echo 'Lxdm is active - reboot now'"
+alias tolightdm="sudo apt install lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings ; sudo systemctl enable lightdm.service -f ; echo 'Lightm is active - reboot now'"
+alias tosddm="sudo apt install sddm ; sudo systemctl enable sddm.service -f ; echo 'Sddm is active - reboot now'"
+alias toly="sudo apt install ly ; sudo systemctl enable ly.service -f ; echo 'Ly is active - reboot now'"
+alias togdm="sudo apt install gdm ; sudo systemctl enable gdm.service -f ; echo 'Gdm is active - reboot now'"
+alias tolxdm="sudo apt install lxdm ; sudo systemctl enable lxdm.service -f ; echo 'Lxdm is active - reboot now'"
 
 # quickly kill picom
 alias kpi='killall picom'
@@ -138,7 +151,7 @@ alias jctl="journalctl -p 3 -xb"
 # -------------------------------------------------------------------------- }}}
 # {{{ Important configuration files
 
-alias nconfgrub='sudo $EDITOR /boot/grub/grub.cfg'
+alias ngrubconf='sudo $EDITOR /boot/grub/grub.cfg'
 alias ngrub='sudo $EDITOR /etc/default/grub'
 
 # -------------------------------------------------------------------------- }}}
@@ -359,11 +372,10 @@ alias srg="surfraw -g"
 # alias chmod="chmod -c"
 # alias chown="chown -c"
 
-
 if command -v diff-so-fancy >/dev/null 2>&1; then
-  function diff() {
-    command diff -u "$@" | diff-so-fancy
-  }
+	function diff() {
+		command diff -u "$@" | diff-so-fancy
+	}
 elif command -v colordiff >/dev/null 2>&1; then
 	diff_ex=colordiff
 	function diff() {
@@ -380,4 +392,3 @@ alias sp="source $ZSHDDIR/export.private"
 alias am="apt-manage"
 alias as="apt search"
 alias sai="sudo apt install"
-

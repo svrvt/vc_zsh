@@ -528,6 +528,7 @@ path() { sed 's/:/\n/g' <(echo $PATH) }
   
 fpath() { sed 's/ /\n/g' <(echo $fpath); }
 
+lpath() { luarocks path | grep -E 'LUA_PATH+|LUA_CPATH' | cut -d '=' -f 2 | sed "s/'//g" | tr ';' '\n' }
 
 ew() { $EDITOR "$(which "$1")" }
 
