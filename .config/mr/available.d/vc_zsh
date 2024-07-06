@@ -1,0 +1,4 @@
+[.config/vcsh/repo.d/vc_zsh.git]
+checkout = vcsh clone git@github.com:svrvt/vc_zsh.git
+
+# vi: ft=ini syntax=sh

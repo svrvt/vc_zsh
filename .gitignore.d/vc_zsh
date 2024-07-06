@@ -1,5 +1,8 @@
 *
 !/.config
+!/.config/mr
+!/.config/mr/available.d
+!/.config/mr/available.d/vc_zsh
 !/.config/sheldon
 !/.config/sheldon/plugins-zsh.toml
 !/.config/zsh
