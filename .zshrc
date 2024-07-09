@@ -94,6 +94,7 @@ zstyle ':completion:*' menu select=2
 zstyle ':completion:*' select-prompt '%SScrolling active: current selection at %p%s'
 zstyle ':completion::complete:*' use-cache 1
 zstyle ':completion:*:descriptions' format '%U%F{YELLOW}%d%f%u'
+zstyle ":completion:*:kill:*" command "ps -u ${USER} -o pid,%cpu,tty,cputime,cmd"
 
 setopt interactivecomments  # Игнорировать записи с префиксом '#'.
 setopt hist_ignore_dups     # Игнорируйте дубликаты в истории.
@@ -112,6 +113,10 @@ autoload -U zargs
 autoload -U edit-command-line
 zle -N edit-command-line
 bindkey '^x^e' edit-command-line
+
+autoload bashcompinit
+bashcompinit
+source /usr/share/bash-completion/completions/pacstall
 
 #принимает несколько слов или их частей (слово*ово)  
 bindkey "^R" history-incremental-pattern-search-backward 
