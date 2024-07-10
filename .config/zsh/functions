@@ -531,6 +531,11 @@ fpath() { sed 's/ /\n/g' <(echo $fpath); }
 lpath() { luarocks path | grep -E 'LUA_PATH+|LUA_CPATH' | cut -d '=' -f 2 | sed "s/'//g" | tr ';' '\n' }
 
 ew() { $EDITOR "$(which "$1")" }
+eg() { 
+  list="$(grep -Rl $1 $2)"
+  $EDITOR $(echo $list)
+}
+
 
 # open-last-command() {
 #   $EDITOR $(which $(history | head -1 | awk '{print $2}'))
