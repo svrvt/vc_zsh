@@ -20,25 +20,15 @@ if [ -d "$HOME/.keysdir" ]; then
 	export keysdir="$HOME/.keysdir"
 fi
 
-# default apps
-export EDITOR="nvim"
-export TERMINAL="alacritty"
-# export BROWSER="firefox"
-
 # cleaning up home folder
+
+export GPG_TTY=$(tty)
 export GNUPGHOME="$XDG_DATA_HOME/gnupg"
 
-export JUPYTER_CONFIG_DIR="$XDG_CONFIG_HOME/jupyter"
+export PASSWORD_STORE_ENABLE_EXTENSIONS=true
+
 
 # export GTK2_RC_FILES="$XDG_CONFIG_HOME"/gtk-2.0/gtkrc
-# export JULIA_DEPOT_PATH="$XDG_DATA_HOME/julia:$JULIA_DEPOT_PATH"
-# export NODE_REPL_HISTORY="$XDG_DATA_HOME"/node_repl_history
-
-
-###
-prependToPath "$HOME"/.local/bin
-prependToPath "$HOME"/bin
-# appendToPath "/usr/games"
 
 ### Packagemanagers
 ## Homebrew
@@ -53,7 +43,7 @@ fi
 ## GUIX
 if [ -f "$HOME/.guix-profile" ]; then
 	GUIX_PROFILE="/home/ru/.guix-profile"
-	command source "$GUIX_PROFILE/etc/profile"
+	source "$GUIX_PROFILE/etc/profile"
 fi
 
 export GUIX_LOCPATH=$HOME/.guix-profile/lib/locale
@@ -89,19 +79,31 @@ if [[ -f ${CONDA_PREFIX}/bin/conda ]]; then
 	eval "$("${CONDA_PREFIX}/bin/conda" "shell.zsh" "hook")"
 fi
 
+export PYTHONSTARTUP="$XDG_CONFIG_HOME"/python/pythonrc
+
 ## RUST
 export CARGO_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/cargo"
 export RUSTUP_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/rustup"
 prependToPath "$CARGO_HOME/bin"
 
-## Ruby Environment Manager
-export RBENV_ROOT=${XDG_DATA_HOME:-$HOME/.local/share}/rbenv
-# if programExists rbenv; then
-# 	eval "$(rbenv init - n)"
-# fi
+#R
+export R_HOME=/usr/lib/R
+export R_PROFILE_USER="$XDG_CONFIG_HOME/R/Rprofile"
 
-## Haskel
-# [ -f "/home/ru/.ghcup/env" ] && source "/home/ru/.ghcup/env" # ghcup-env
+#PERL
+export PERL_CPANM_HOME="$XDG_CACHE_HOME"/cpanm
+
+#CUDA
+export CUDA_CACHE_PATH="$XDG_CACHE_HOME"/nv
+export __GL_SHADER_DISK_CACHE_PATH="$XDG_CACHE_HOME"/nv
+
+export DOTNET_CLI_HOME="$XDG_DATA_HOME"/dotnet
+
+#NODE
+export NPM_CONFIG_USERCONFIG=$XDG_CONFIG_HOME/npm/npmrc
+export NPM_CONFIG_CACHE=$XDG_CACHE_HOME/npm
+
+export NODE_REPL_HISTORY="$XDG_DATA_HOME"/node_repl_history
 
 ## NODE Environment Managers
 # FastNodeManager in Rust "https://github.com/Schniz/fnm"
@@ -120,10 +122,26 @@ alias nvm='_nvm_init; nvm'
 alias npm='_nvm_init; npm'
 alias node='_nvm_init; node'
 
-export NPM_CONFIG_USERCONFIG=$XDG_CONFIG_HOME/npm/npmrc
-export NPM_CONFIG_CACHE=$XDG_CACHE_HOME/npm
+# bun
+export BUN_INSTALL="$XDG_DATA_HOME/bun"
+export PATH="$PATH:$BUN_INSTALL/bin"
+# bun completions
+[ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"
+
+## Ruby
+export RBENV_ROOT=${XDG_DATA_HOME:-$HOME/.local/share}/rbenv
+# if programExists rbenv; then
+# 	eval "$(rbenv init - n)"
+# fi
+
+## Haskel
+# [ -f "/home/ru/.ghcup/env" ] && source "/home/ru/.ghcup/env" # ghcup-env
+
+# Julia
+# export JULIA_DEPOT_PATH="$XDG_DATA_HOME/julia:$JULIA_DEPOT_PATH"
 
 
+# PATH
 BIN_HOME=$HOME/bin
 export BIN_HOME
 # bin_dirs=("rofi" "net")
@@ -133,30 +151,39 @@ for d in $(find "$BIN_HOME" -maxdepth 1 -type d); do
 	appendToPath "$d"
 done
 
+###
+prependToPath "$HOME"/.local/bin
+prependToPath "$HOME"/bin
+# appendToPath "/usr/games"
+
 # Adds ~/.local/bin and subfolders to $PATH
 # export PATH="$PATH:${$(find ~/.local/bin -maxdepth 1 -type d -printf %p:)%%:}"
 
-export MANPAGER="less -R --use-color -Dd+r -Du+b"
 
 ###############
 
 # Environment variables
 
-export ZSH_PLUGINS_ALIAS_TIPS_TEXT="Alias: "
-export ZSH_TMUX_AUTOSTART='false'
-export ZSH_TMUX_AUTOSTART_ONCE='false'
-export ZSH_TMUX_AUTOCONNECT='false'
-export DISABLE_AUTO_TITLE='true'
+# export ZSH_PLUGINS_ALIAS_TIPS_TEXT="Alias: "
+# export ZSH_TMUX_AUTOSTART='false'
+# export ZSH_TMUX_AUTOSTART_ONCE='false'
+# export ZSH_TMUX_AUTOCONNECT='false'
+# export DISABLE_AUTO_TITLE='true'
 
-# export GPG_TTY=$(tty)
 
-export R_HOME=/usr/lib/R
+export JUPYTER_CONFIG_DIR="$XDG_CONFIG_HOME/jupyter"
+
+export MPLAYER_HOME="$XDG_CONFIG_HOME"/mplayer
+
+export SQLITE_HISTORY="$XDG_CACHE_HOME"/sqlite_history
+
+export W3M_DIR="$XDG_DATA_HOME"/w3m
 
 #export VIMRUNTIME=/usr/share/nvim/runtime
 
-export LC_ALL=ru_RU.UTF-8
-export LANG=ru_RU.UTF-8
-export LANGUAGE=ru_RU.UTF-8
+# export LC_ALL=ru_RU.UTF-8
+# export LANG=ru_RU.UTF-8
+# export LANGUAGE=ru_RU.UTF-8
 
 # export LD_LIBRARY_PATH=$HOME/miniconda3/envs/JupyterSystemEnv/lib:$LD_LIBRARY_PATH
 # export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
@@ -174,6 +201,10 @@ export LANGUAGE=ru_RU.UTF-8
 
 # -------------------------------------------------------------------------- }}}
 # {{{ Default Browers, File Manager, and 256 colors.
+
+# default apps
+export TERMINAL="alacritty"
+
 if programExists nbrowser; then
 	export BROWSER="nbrowser"
 elif programExists yandex-browser; then
@@ -209,6 +240,7 @@ fi
 # export TERMINAL=alacritty
 # export WM=awesome
 
+export MANPAGER="less -R --use-color -Dd+r -Du+b"
 # -------------------------------------------------------------------------- }}}
 # {{{ autodoc location.
 
@@ -234,8 +266,8 @@ fi
 # -------------------------------------------------------------------------- }}}
 # {{{ dotnet
 
-# if dirExists ${HOME}/.dotnet; then
-#   DOTNET_ROOT=${HOME}/.dotnet
+# if dirExists ${XDG_DATA_HOME}/dotnet; then
+#   DOTNET_ROOT=${XDG_DATA_HOME}/dotnet
 #   export PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools
 # else
 #   DOTNET_ROOT=""
@@ -257,6 +289,7 @@ export EDITOR
 export VISUAL="nvim"
 export PAGER="less"
 export READER="zathura"
+export SYSTEMD_EDITOR=nvim
 # -------------------------------------------------------------------------- }}}
 # {{{ FZF customizations
 
@@ -299,16 +332,5 @@ export READER="zathura"
 
 # -------------------------------------------------------------------------- }}}
 
-# [ -s "/home/ru/.config/nvim-Lazyman/.lazymanrc" ] && source "/home/ru/.config/nvim-Lazyman/.lazymanrc"
-# bindkey -s "^n" "nvims\n"
-
-# # bun
-# export BUN_INSTALL="$HOME/.bun"
-# export PATH="$PATH:$BUN_INSTALL/bin"
-# # bun completions
-# [ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"
-
-export PASSWORD_STORE_ENABLE_EXTENSIONS=true
 
 # vim: ft=zsh syntax=sh
-export SYSTEMD_EDITOR=nvim
