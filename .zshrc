@@ -96,6 +96,38 @@ zstyle ':completion::complete:*' use-cache 1
 zstyle ':completion:*:descriptions' format '%U%F{YELLOW}%d%f%u'
 zstyle ":completion:*:kill:*" command "ps -u ${USER} -o pid,%cpu,tty,cputime,cmd"
 
+zstyle -e ':completion:*:hosts' hosts 'reply=(
+  # ${=${=${=${${(f)"$(cat {/etc/ssh_,~/.ssh/known_}hosts(|2)(N) 2>/dev/null)"}%%[#| ]*}//\]:[0-9]*/ }//,/ }//\[/ }
+  ${=${${${${(@M)${(f)"$(cat ~/.ssh/config 2>/dev/null)"}:#Host *}#Host }:#*\**}:#*\?*}}
+)'
+
+zstyle ':completion:*:users' ignored-patterns \
+  adm amanda apache avahi backup beaglidx bin brltty cacti canna clamav \
+  colord cups cups-pk-helper daemon dbus debian-tor dhcpcd distcache \
+  dnscrypt-proxy dnsmasq dovecot earlyoom fax flatpak ftp fwupd-refresh \
+  games gdm geoclue git gitlab-runner gkrellmd gluster gnats gopher hacluster \
+  haldaemon halt hsqldb http i2psvc ident irc junkbust keydope landscape ldap \
+  lightdm list lp lxd mail mailman mailnull man messagebus miniflux mldonkey \
+  mpd mysql nagios named netdump news nfsnobody nm-openconnect nobody nscd ntp \
+  nut nvidia-persistenced nx openvpn operator pcap polkitd pollinate postfix \
+  postgres privoxy proxy pulse pvm quagga radvd root rpc rpcuser rpm rtkit \
+  saned sddm shutdown squid sshd sync sys syslog 'systemd-*' tcpdump tor \
+  transmission tss usbmux uucp uuidd vcsa www-data xfs '_*'
+
+zstyle ':completion:*:(ssh|scp|rsync):*' tag-order \
+  'hosts:-host:host hosts:-ipaddr:ip\ address *'
+zstyle ':completion:*:(scp|rsync):*' \
+  group-order files all-files hosts-domain hosts-host
+zstyle ':completion:*:ssh:*' group-order hosts-host
+zstyle ':completion:*:(ssh|scp|rsync):*:hosts-host' ignored-patterns \
+  '*(.|:)*' loopback ip6-loopback localhost ip6-localhost broadcasthost
+zstyle ':completion:*:(ssh|scp|rsync):*:hosts-domain' ignored-patterns \
+  '<->.<->.<->.<->' '^[-[:alnum:]]##(.[-[:alnum:]]##)##' '*@*'
+zstyle ':completion:*:(ssh|scp|rsync):*:hosts-ipaddr' ignored-patterns \
+  '^(<->.<->.<->.<->|(|::)([[:xdigit:].]##:(#c,2))##(|%*))' '127.0.0.<->' \
+  '255.255.255.255' '::1' 'fe80::*'
+
+
 setopt interactivecomments  # Игнорировать записи с префиксом '#'.
 setopt hist_ignore_dups     # Игнорируйте дубликаты в истории.
 setopt hist_ignore_space    # Запрет записи в истории, если перед ней есть пробелы.
