@@ -5,6 +5,8 @@
 !/.config/mr/available.d/vc_zsh
 !/.config/sheldon
 !/.config/sheldon/plugins-zsh.toml
+!/.config/tealdeer
+!/.config/tealdeer/config.toml
 !/.config/zsh
 !/.config/zsh/aliases
 !/.config/zsh/completions
