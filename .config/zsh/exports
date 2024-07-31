@@ -287,7 +287,7 @@ fi
 export EDITOR
 
 export VISUAL="nvim"
-export PAGER="less"
+export PAGER="less -R"
 export READER="zathura"
 export SYSTEMD_EDITOR=nvim
 # -------------------------------------------------------------------------- }}}
