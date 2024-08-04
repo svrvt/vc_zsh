@@ -159,6 +159,8 @@ prependToPath "$HOME"/bin
 # Adds ~/.local/bin and subfolders to $PATH
 # export PATH="$PATH:${$(find ~/.local/bin -maxdepth 1 -type d -printf %p:)%%:}"
 
+# LM Studio CLI tool (lms)
+prependToPath "$PATH:/home/ru/.cache/lm-studio/bin"
 
 ###############
 

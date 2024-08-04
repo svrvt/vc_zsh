@@ -82,7 +82,7 @@ setopt pushd_ignore_dups                    ## Удалить повторяющ
 setopt pushd_minus                          ## oтменяет +/- операторы.
 bindkey -s "q\t" "cd -\t"                   ## q<tab> - for open dirstack
 
-fpath=(~/.local/share/zsh/vendor-completions $fpath)
+fpath=(~/.local/share/zsh/vendor-completions /usr/share/zsh/site-functions $fpath)
 
 # Completion.
 autoload -Uz compinit
@@ -149,6 +149,8 @@ bindkey '^x^e' edit-command-line
 autoload bashcompinit
 bashcompinit
 source /usr/share/bash-completion/completions/pacstall
+source /usr/share/bash-completion/completions/awg
+#source /usr/share/bash-completion/completions/awg-quick
 
 #принимает несколько слов или их частей (слово*ово)  
 bindkey "^R" history-incremental-pattern-search-backward 
