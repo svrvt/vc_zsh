@@ -16,14 +16,14 @@ if [ ! -d "${TMUX_TMPDIR}" ]; then mkdir -p "${TMUX_TMPDIR}"; fi
 
 ##########
 
-if [ -d "$HOME/.keysdir" ]; then
-	export keysdir="$HOME/.keysdir"
-fi
+[ -d "$HOME/keys" ] || mkdir "$HOME/keys"
+export keysdir="$HOME/keys"
 
 # cleaning up home folder
 
 export GPG_TTY=$(tty)
-export GNUPGHOME="$XDG_DATA_HOME/gnupg"
+export GNUPGHOME="$keysdir/gnupg"
+[ -d $GNUPGHOME ] || mkdir -m 700 "$GNUPGHOME"
 
 export PASSWORD_STORE_ENABLE_EXTENSIONS=true
 
