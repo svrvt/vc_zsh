@@ -1,17 +1,47 @@
 #!/bin/bash
 
-PASSWORD_STORE_DIR=~/.password-store
-
-if which pass &>/dev/null; then
-	if [ -n "$(command ls -A $PASSWORD_STORE_DIR)" ]; then
-#
-		if which gh &>/dev/null; then
-			export GITHUB_TOKEN="$(pass system/github_token)"
-		fi
-	elif which tomb &>/dev/null; then
-		echo -e "password store closed with tomb"
-	else
-		echo -e "password store is empty"
+pass() {
+	if [ $# -gt 0 ]; then
+		for a in "$@"; do
+			case $a in
+			[[:alnum:]])
+				export PASSWORD_STORE_TOMB_FILE=~/keys/.tombs/pass_$a.tomb
+				export PASSWORD_STORE_TOMB_KEY=~/keys/.tombkeys/pass_$a.key.tomb
+				export PASSWORD_STORE_DIR=~/keys/pass_$a
+				shift
+				break
+				;;
+			"otp")
+				export PASSWORD_STORE_TOMB_FILE=~/keys/.tombs/pass_$a.tomb
+				export PASSWORD_STORE_TOMB_KEY=~/keys/.tombkeys/pass_$a.key.tomb
+				export PASSWORD_STORE_DIR=~/keys/pass_$a
+				break
+				;;
+			"df" | "default")
+				export PASSWORD_STORE_TOMB_FILE=~/keys/.tombs/pass.tomb
+				export PASSWORD_STORE_TOMB_KEY=~/keys/.tombkeys/pass.key.tomb
+				export PASSWORD_STORE_DIR=~/keys/pass
+				shift
+				break
+				;;
+			esac
+		done
 	fi
-fi
 
+	if which tomb &>/dev/null && [ -f "$PASSWORD_STORE_TOMB_FILE" ]; then
+		if [ -z "$(command ls -A "$PASSWORD_STORE_DIR")" ]; then
+			command pass open --debug
+		fi
+
+	elif [ ! -f "$PASSWORD_STORE_TOMB_FILE" ]; then
+		echo -e "password store unused"
+		# echo -e "$PASSWORD_STORE_TOMB_FILE"
+		# echo -e "$PASSWORD_STORE_TOMB_KEY"
+		# echo -e "$PASSWORD_STORE_DIR"
+		# export PASSWORD_STORE_TOMB_SIZE=10
+		# command pass tomb 02B26143B5C898782B452C5C0C487337BB5A75F2
+		return
+	fi
+	command pass "$@" #2>/dev/null
+}
+# which gh &>/dev/null && export GITHUB_TOKEN="$(pass system/github_token)"
