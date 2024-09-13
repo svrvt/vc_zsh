@@ -213,7 +213,7 @@ todos() {
 }
 
 unLock() {
-	for pid in $(ps aux | awk 'apt {print $2}'); do
+	for pid in $(ps aux | grep " apt " | awk '{print $2}'); do
 		kill -9 "$pid"
 	done
 }
