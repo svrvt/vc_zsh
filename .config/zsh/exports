@@ -16,17 +16,16 @@ if [ ! -d "${TMUX_TMPDIR}" ]; then mkdir -p "${TMUX_TMPDIR}"; fi
 
 ##########
 
-[ -d "$HOME/keys" ] || mkdir "$HOME/keys"
 export keysdir="$HOME/keys"
+[ -d "$keysdir" ] || mkdir -m 700 "$keysdir"
 
-# cleaning up home folder
-
-export GPG_TTY=$(tty)
-export GNUPGHOME="$keysdir/gnupg"
+export GNUPGHOME="$keysdir/.gnupg"
 [ -d $GNUPGHOME ] || mkdir -m 700 "$GNUPGHOME"
 
+export GPG_TTY=$(tty)
 export PASSWORD_STORE_ENABLE_EXTENSIONS=true
 
+# cleaning up home folder
 
 # export GTK2_RC_FILES="$XDG_CONFIG_HOME"/gtk-2.0/gtkrc
 
@@ -334,5 +333,5 @@ export SYSTEMD_EDITOR=nvim
 
 # -------------------------------------------------------------------------- }}}
 
-
+export NVIM_APPNAME=nvim-rafi
 # vim: ft=zsh syntax=sh

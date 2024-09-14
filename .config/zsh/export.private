@@ -1,47 +1,60 @@
 #!/bin/bash
 
+# keysdir=~/keys
+
 pass() {
 	if [ $# -gt 0 ]; then
 		for a in "$@"; do
 			case $a in
-			[[:alnum:]])
-				export PASSWORD_STORE_TOMB_FILE=~/keys/.tombs/pass_$a.tomb
-				export PASSWORD_STORE_TOMB_KEY=~/keys/.tombkeys/pass_$a.key.tomb
-				export PASSWORD_STORE_DIR=~/keys/pass_$a
+			"otp")
+				export PASSWORD_STORE_TOMB_FILE=$keysdir/.tombs/$a.tomb
+				export PASSWORD_STORE_TOMB_KEY=$keysdir/.tombkeys/$a.tomb.key
+				export PASSWORD_STORE_DIR=$keysdir/$a
+				break
+				;;
+			"api" | "token")
+				export PASSWORD_STORE_TOMB_FILE=$keysdir/.tombs/$a.tomb
+				export PASSWORD_STORE_TOMB_KEY=$keysdir/.tombkeys/$a.tomb.key
+				export PASSWORD_STORE_DIR=$keysdir/$a
 				shift
 				break
 				;;
-			"otp")
-				export PASSWORD_STORE_TOMB_FILE=~/keys/.tombs/pass_$a.tomb
-				export PASSWORD_STORE_TOMB_KEY=~/keys/.tombkeys/pass_$a.key.tomb
-				export PASSWORD_STORE_DIR=~/keys/pass_$a
-				break
-				;;
-			"df" | "default")
-				export PASSWORD_STORE_TOMB_FILE=~/keys/.tombs/pass.tomb
-				export PASSWORD_STORE_TOMB_KEY=~/keys/.tombkeys/pass.key.tomb
-				export PASSWORD_STORE_DIR=~/keys/pass
+			"ss")
+				export PASSWORD_STORE_TOMB_FILE=$keysdir/.tombs/$a.tomb
+				export PASSWORD_STORE_TOMB_KEY=$keysdir/.tombkeys/$a.tomb.key
+				export PASSWORD_STORE_DIR=$keysdir/$a
 				shift
 				break
 				;;
 			esac
 		done
+	else
+		export PASSWORD_STORE_TOMB_FILE=$keysdir/.tombs/password.tomb
+		export PASSWORD_STORE_TOMB_KEY=$keysdir/.tombkeys/password.tomb.key
+		export PASSWORD_STORE_DIR=$keysdir/password
 	fi
+
+	# echo -e "$PASSWORD_STORE_TOMB_FILE"
+	# echo -e "$PASSWORD_STORE_TOMB_KEY"
+	# echo -e "$PASSWORD_STORE_DIR"
 
 	if which tomb &>/dev/null && [ -f "$PASSWORD_STORE_TOMB_FILE" ]; then
 		if [ -z "$(command ls -A "$PASSWORD_STORE_DIR")" ]; then
 			command pass open --debug
 		fi
-
 	elif [ ! -f "$PASSWORD_STORE_TOMB_FILE" ]; then
 		echo -e "password store unused"
-		# echo -e "$PASSWORD_STORE_TOMB_FILE"
-		# echo -e "$PASSWORD_STORE_TOMB_KEY"
-		# echo -e "$PASSWORD_STORE_DIR"
-		# export PASSWORD_STORE_TOMB_SIZE=10
-		# command pass tomb 02B26143B5C898782B452C5C0C487337BB5A75F2
+		export PASSWORD_STORE_TOMB_SIZE=10
+		command pass tomb BB5A75F2
 		return
 	fi
-	command pass "$@" #2>/dev/null
+
+	command pass "$@" ##2>/dev/null
+
+	# export PASSWORD_STORE_TOMB_FILE=$keysdir/.tombs/password.tomb
+	# export PASSWORD_STORE_TOMB_KEY=$keysdir/.tombkeys/password.tomb.key
+	# export PASSWORD_STORE_DIR=$keysdir/password
+
 }
+
 # which gh &>/dev/null && export GITHUB_TOKEN="$(pass system/github_token)"

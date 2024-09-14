@@ -82,7 +82,14 @@ setopt pushd_ignore_dups                    ## Удалить повторяющ
 setopt pushd_minus                          ## oтменяет +/- операторы.
 bindkey -s "q\t" "cd -\t"                   ## q<tab> - for open dirstack
 
-fpath=(~/.local/share/zsh/vendor-completions /usr/share/zsh/site-functions $fpath)
+candidate=(\
+  ~/.local/share/zsh/vendor-completions \
+  /usr/share/zsh/site-functions \
+  ~/.zfunc \
+)
+for r in $candidate; do
+  [ -d $r ] && fpath+=$r
+done
 
 # Completion.
 autoload -Uz compinit
@@ -168,3 +175,4 @@ alias zt="time ZSH_DEBUGRC=1 zsh -i -c exit"
 if [ -n "${ZSH_DEBUGRC+1}" ]; then
     zprof
 fi
+
