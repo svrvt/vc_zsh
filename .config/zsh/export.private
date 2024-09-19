@@ -12,14 +12,7 @@ pass() {
 				export PASSWORD_STORE_DIR=$keysdir/$a
 				break
 				;;
-			"api" | "token")
-				export PASSWORD_STORE_TOMB_FILE=$keysdir/.tombs/$a.tomb
-				export PASSWORD_STORE_TOMB_KEY=$keysdir/.tombkeys/$a.tomb.key
-				export PASSWORD_STORE_DIR=$keysdir/$a
-				shift
-				break
-				;;
-			"ss")
+			"api" | "token" | "ss")
 				export PASSWORD_STORE_TOMB_FILE=$keysdir/.tombs/$a.tomb
 				export PASSWORD_STORE_TOMB_KEY=$keysdir/.tombkeys/$a.tomb.key
 				export PASSWORD_STORE_DIR=$keysdir/$a
@@ -40,7 +33,7 @@ pass() {
 
 	if which tomb &>/dev/null && [ -f "$PASSWORD_STORE_TOMB_FILE" ]; then
 		if [ -z "$(command ls -A "$PASSWORD_STORE_DIR")" ]; then
-			command pass open --debug
+			command pass open --timer=15m --debug
 		fi
 	elif [ ! -f "$PASSWORD_STORE_TOMB_FILE" ]; then
 		echo -e "password store unused"
