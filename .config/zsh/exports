@@ -17,6 +17,7 @@ if [ ! -d "${TMUX_TMPDIR}" ]; then mkdir -p "${TMUX_TMPDIR}"; fi
 ##########
 
 export keysdir="$HOME/keys"
+export KEYSDIR=$keysdir
 [ -d "$keysdir" ] || mkdir -m 700 "$keysdir"
 
 export GNUPGHOME="$keysdir/.gnupg"
@@ -112,10 +113,10 @@ export NODE_REPL_HISTORY="$XDG_DATA_HOME"/node_repl_history
 
 # NodeVersionManage "https://github.com/nvm-sh/nvm"
 function _nvm_init(){
-  unalias nvm npm node
-  export NVM_DIR=${XDG_DATA_HOME:-$HOME/.local/share}/nvm
-  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+	unalias nvm npm node
+	export NVM_DIR=${XDG_DATA_HOME:-$HOME/.local/share}/nvm
+	[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+	[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 }
 alias nvm='_nvm_init; nvm'
 alias npm='_nvm_init; npm'

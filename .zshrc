@@ -83,8 +83,8 @@ setopt pushd_minus                          ## oтменяет +/- операт�
 bindkey -s "q\t" "cd -\t"                   ## q<tab> - for open dirstack
 
 candidate=(\
-  ~/.local/share/zsh/vendor-completions \
   /usr/share/zsh/site-functions \
+  ~/.local/share/zsh/vendor-completions \
   ~/.zfunc \
 )
 for r in $candidate; do
@@ -155,14 +155,15 @@ bindkey '^x^e' edit-command-line
 
 autoload bashcompinit
 bashcompinit
-source /usr/share/bash-completion/completions/pacstall
-source /usr/share/bash-completion/completions/awg
-#source /usr/share/bash-completion/completions/awg-quick
 
-#принимает несколько слов или их частей (слово*ово)  
-bindkey "^R" history-incremental-pattern-search-backward 
+for b in pacstall awg; do
+  (( $+commands[$b] )) && source /usr/share/bash-completion/completions/$b
+done
+# source /usr/share/bash-completion/completions/awg-quick
+
+#принимает несколько слов или их частей (слово*ово)
+bindkey "^R" history-incremental-pattern-search-backward
 bindkey "^S" history-incremental-pattern-search-forward
-
 
 # Hishtory Config:
 # export PATH="$PATH:/home/ru/.hishtory"
