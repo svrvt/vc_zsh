@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/zsh
+
 
 # keysdir=~/keys
 
@@ -7,14 +8,10 @@ pass() {
 		for a in "$@"; do
 			case $a in
 			"otp")
-				export PASSWORD_STORE_TOMB_FILE=$keysdir/.tombs/$a.tomb
-				export PASSWORD_STORE_TOMB_KEY=$keysdir/.tombkeys/$a.tomb.key
 				export PASSWORD_STORE_DIR=$keysdir/$a
 				break
-				;;
-			"api" | "token" | "ss")
-				export PASSWORD_STORE_TOMB_FILE=$keysdir/.tombs/$a.tomb
-				export PASSWORD_STORE_TOMB_KEY=$keysdir/.tombkeys/$a.tomb.key
+				a;;
+			"api" | "token" | "ss" | "base" | "alpha")
 				export PASSWORD_STORE_DIR=$keysdir/$a
 				shift
 				break
@@ -22,32 +19,67 @@ pass() {
 			esac
 		done
 	else
-		export PASSWORD_STORE_TOMB_FILE=$keysdir/.tombs/password.tomb
-		export PASSWORD_STORE_TOMB_KEY=$keysdir/.tombkeys/password.tomb.key
-		export PASSWORD_STORE_DIR=$keysdir/password
+		export PASSWORD_STORE_DIR=$keysdir/base
 	fi
 
-	# echo -e "$PASSWORD_STORE_TOMB_FILE"
-	# echo -e "$PASSWORD_STORE_TOMB_KEY"
-	# echo -e "$PASSWORD_STORE_DIR"
+	TOMB_FILE=$keysdir/.tombs/secrets.tomb
+	TOMB_KEY=$keysdir/.tombkeys/secrets.tomb.key
 
-	if which tomb &>/dev/null && [ -f "$PASSWORD_STORE_TOMB_FILE" ]; then
+	MOUNT_DIR=$keysdir/.mount_secrets
+
+	[ -d "$PASSWORD_STORE_DIR" ] || mkdir -m 700 "$PASSWORD_STORE_DIR"
+
+	if which tomb &>/dev/null && [ -f "$TOMB_FILE" ]; then
 		if [ -z "$(command ls -A "$PASSWORD_STORE_DIR")" ]; then
-			command pass open --timer=15m --debug
+			tomb open $TOMB_FILE -k $TOMB_KEY $MOUNT_DIR
 		fi
-	elif [ ! -f "$PASSWORD_STORE_TOMB_FILE" ]; then
-		echo -e "password store unused"
-		export PASSWORD_STORE_TOMB_SIZE=10
-		command pass tomb BB5A75F2
-		return
 	fi
 
 	command pass "$@" ##2>/dev/null
-
-	# export PASSWORD_STORE_TOMB_FILE=$keysdir/.tombs/password.tomb
-	# export PASSWORD_STORE_TOMB_KEY=$keysdir/.tombkeys/password.tomb.key
-	# export PASSWORD_STORE_DIR=$keysdir/password
-
 }
 
-# which gh &>/dev/null && export GITHUB_TOKEN="$(pass system/github_token)"
+_pass () {
+	local cmd
+	if (( CURRENT == 2 )); then
+		local -a subdir;
+		subdir=(
+			"api:API keys"
+			"token:Tokens"
+			"ss:Recovery keys"
+			"base:Base passwords"
+			"alpha:Alpha passwords"
+			"otp:OneTimePassword"
+		)
+		_describe -t commands 'pass' subdir
+
+	elif (( CURRENT == 3 )); then
+		cmd=${words[2]}
+		# Set the context for t
+		curcontext="${curcontext%:*:*}:pass-$cmd"
+		# Narrow the range of words we are looking at to exclude `pass'
+		(( CURRENT-- ))
+		shift words
+		_pass_complete_entries_helper -type f
+	fi
+}
+compdef _pass _pass
+
+_pass_complete_entries_helper () {
+	local IFS=$'\n'
+	local prefix
+
+	case "${cmd}" in
+		"api" | "token" | "ss" | "base" | "alpha" | "otp" )
+			local PASSWORD_STORE_DIR=$HOME/keys/${cmd}
+			;;
+	esac
+	zstyle -s ":completion:${curcontext}:" prefix prefix || prefix="${PASSWORD_STORE_DIR:-$HOME/.password-store}"
+	_values -C 'passwords' ${$(find -L "$prefix" \( -name .git -o -name .gpg-id \) -prune -o $@ -print 2>/dev/null | sed -e "s#${prefix}/\{0,1\}##" -e 's#\.gpg##' -e 's#\\#\\\\#g' -e 's#:#\\:#g' | sort):-""}
+}
+
+# zstyle ':completion:*:*:pass:*' tag-order 'api:API passwords' 'token:Token passwords' 'ss:SS passwords' 'base:Base passwords' 'alpha:Alpha passwords' 'otp:OTP passwords'
+
+
+
+# which gh &>/dev/null && export GITHUB_TOKEN="$(pass token github)"
+
