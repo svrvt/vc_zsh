@@ -274,6 +274,7 @@ alias scrs="scrot -s -l width=3,color='#1688f0',mode=edge,opacity=90 -F ~/record
 alias ssd="sudo systemctl disable"
 alias sse="sudo systemctl enable"
 alias ssr="sudo systemctl restart"
+alias ssR="sudo systemctl reload"
 alias ssi="systemctl status"
 alias sss="sudo systemctl start"
 alias sst="sudo systemctl stop"
