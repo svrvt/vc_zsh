@@ -105,7 +105,7 @@ export NPM_CONFIG_CACHE=$XDG_CACHE_HOME/npm
 
 export NODE_REPL_HISTORY="$XDG_DATA_HOME"/node_repl_history
 
-## NODE Environment Managers
+## Node Environment Managers
 # FastNodeManager in Rust "https://github.com/Schniz/fnm"
 # if programExists fnm; then
 # 	eval "$(fnm env --use-on-cd)"
@@ -124,7 +124,7 @@ alias node='_nvm_init; node'
 
 # bun
 export BUN_INSTALL="$XDG_DATA_HOME/bun"
-export PATH="$PATH:$BUN_INSTALL/bin"
+appendToPath "$BUN_INSTALL/bin"
 # bun completions
 [ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"
 
@@ -152,15 +152,15 @@ for d in $(find "$BIN_HOME" -maxdepth 1 -type d); do
 done
 
 ###
+appendToPath "$HOME"/bin
 prependToPath "$HOME"/.local/bin
-prependToPath "$HOME"/bin
 # appendToPath "/usr/games"
 
 # Adds ~/.local/bin and subfolders to $PATH
 # export PATH="$PATH:${$(find ~/.local/bin -maxdepth 1 -type d -printf %p:)%%:}"
 
 # LM Studio CLI tool (lms)
-prependToPath "$PATH:/home/ru/.cache/lm-studio/bin"
+appendToPath "$HOME"/.cache/lm-studio/bin
 
 ###############
 
@@ -289,7 +289,7 @@ export EDITOR
 export VISUAL="nvim"
 export PAGER="less -R"
 export READER="zathura"
-export SYSTEMD_EDITOR=nvim
+export SYSTEMD_EDITOR=$EDITOR
 # -------------------------------------------------------------------------- }}}
 # {{{ FZF customizations
 
