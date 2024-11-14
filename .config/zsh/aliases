@@ -393,3 +393,8 @@ alias sp="source $ZSHDDIR/export.private"
 alias am="apt-manage"
 alias as="apt search"
 alias sai="sudo apt install"
+
+alias d="docker"
+alias dc="docker compose"
+alias di="docker image"
+alias dn="docker network"
