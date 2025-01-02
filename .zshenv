@@ -3,7 +3,7 @@
 #speed up load time
 skip_global_compinit=1
 
-
+export XDG_DATA_DIRS=/usr/share:"$XDG_DATA_DIRS"
 # export XDG_CURRENT_DESKTOP="KDE"
 
 export XDG_CONFIG_HOME="$HOME/.config"
