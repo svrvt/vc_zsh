@@ -36,16 +36,40 @@ SAVEHIST='128000'
 ZSHDDIR="${HOME}/.config/zsh"
 
 # zsh_sourses=("exports" "options" "aliases" "functions" "zle" "bindings" "compctl" "style" "misc" "prompt")
-zsh_sourses=("aliases" "prompt")
+zsh_sources=(
+  "aliases"
+  "prompt"
+  "notify"
+)
+
+# zsh_submodule_dir="$HOME/src/submodules/zsh"
+# submodule_plugin_sources=(
+#   "zsh-notify"
+#   "deer"
+#   )
 
 if [[ -o interactive ]]; then
 
-  for m in "${zsh_sourses[@]}"; do
+  # for s in "${submodule_plugin_sources[@]}"; do
+  #   [[ -d "$zsh_submodule_dir/$s" ]] &&
+  #     plugs=$(find src/submodules/zsh/$s -type f -name \*.plugin.zsh -or -type f -name $s)
+  #     source
+  # done
+
+  source ~/src/submodules/zsh/zsh-notify/notify.plugin.zsh
+  source ~/src/submodules/zsh/deer/deer
+
+  zle -N deer
+  bindkey '\ek' deer
+
+  for m in "${zsh_sources[@]}"; do
     [[ -f "$ZSHDDIR/$m" ]] && source "$ZSHDDIR/$m"
   done
 
+
   #plugins
   if (( $+commands[sheldon] )); then
+     export SHELDON_CONFIG_FILE="$HOME/.config/sheldon/plugins-zsh.toml"
      eval "$(sheldon --config-file $XDG_CONFIG_HOME/sheldon/plugins-zsh.toml source)"
   fi
 
@@ -58,13 +82,14 @@ if [[ -o interactive ]]; then
   fi
   bindkey -s "^n" "navi\n"
 
-
 fi
 
 # (switch to Emacs mode)
 bindkey -e
 # bindkey -v
 
+zle -N deer
+bindkey '\ek' deer
 ## Стек Каталогов
 DIRSTACKFILE="$HOME/.cache/zsh/dirs"
 if [[ -f $DIRSTACKFILE ]] && [[ $#dirstack -eq 0 ]]; then

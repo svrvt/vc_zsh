@@ -1,0 +1,87 @@
+################################################################################
+#                             Notifications                                    #
+################################################################################
+# Сообщите мне немедленно о завершении работы
+setopt NOTIFY
+
+# Уведомления поддерживаются только в X11. В других случаях, например, в Linux
+# консоль, использование плагина приведет к ошибке, которой мы хотим избежать.
+
+# Enables private/local overrides.
+_get_local_optional_submodules() {
+  true
+}
+join_by() {
+  local IFS="$1"
+  shift
+  printf '%s\n' "$*"
+}
+_zsh_notify_format_duration() {
+  emulate -L zsh
+  local total_seconds="$1"
+  local hours minutes seconds
+  hours=$((total_seconds / (60 * 60)))
+  minutes=$(((total_seconds - hours * 60 * 60) / 60))
+  seconds=$((total_seconds % 60))
+  if ((hours > 0)); then
+    printf '%sh:%sm:%ss' "${hours}" "${minutes}" "${seconds}"
+  elif ((minutes > 0)); then
+    printf '%sm:%ss' "${minutes}" "${seconds}"
+  else
+    printf '%ss' "${seconds}"
+  fi
+}
+
+_zsh_notify_custom_notifier() {
+  emulate -L zsh
+  # lib предоставляет format-time и notification-title
+  # source "${PLUGINS_DIR}/zsh-notify/lib"
+  # local type time_elapsed title message
+  # type="$1"
+  # time_elapsed="$(format-time "$2")"
+  local result="$1"
+  local full_command title_command message
+  full_command="$(<&0)"
+  if ((${#full_command} > 20)); then
+    title_command="$(printf '%s...' "${full_command:0:17}")"
+    message="${full_command}"
+  else
+    title_command="${full_command}"
+    message=''
+  fi
+  local duration="$(_zsh_notify_format_duration "$2")"
+  local title
+  title="$(printf '%s : %s after %s' \
+    "${title_command}" "${result}" "${duration}")"
+
+  if [[ "${result}" == 'success' ]]; then
+    local notify_cmd='notify-success'
+  else
+    local notify_cmd='notify-failure'
+  fi
+  command "${notify_cmd}" "$title" "$message"
+}
+# NOTE: опции zstyle должны быть установлены после загрузки плагина.
+zstyle ':notify:*' notifier _zsh_notify_custom_notifier 
+zstyle ':notify:*' command-complete-timeout 5
+zstyle ':notify:*' always-notify-on-failure false
+zstyle ':notify:*' always-check-active-window true
+zstyle ':notify:*' enable-on-ssh false
+
+# zstyle ':notify:*' error-sound "Glass"
+# zstyle ':notify:*' success-sound "default"
+
+function {
+  emulate -L zsh
+  # if [[ "${HOST_ALIAS-}" == hera11 ]]; then
+  #   local blacklist_regex='.'
+  # else
+    local blacklisted_cmds=('editor' 'vim' 'nvim' 'less' 'git' 'ranger' 'bash'
+      'zsh' 'gqui' '.*[iI][pP]ython' 'g3python' 'man' 'tmux' 'fg' 'fpp' 'yank'
+      'iblaze' 'ovpn' 'ssh' 'zsh' 'fzf' 'dmesg' 'journalctl')
+    local blacklist_regex='\b('"$(join_by '|' "${blacklisted_cmds[@]}")"')\b'
+  # fi
+  zstyle ':notify:*' blacklist-regex "${blacklist_regex}"
+}
+
+
