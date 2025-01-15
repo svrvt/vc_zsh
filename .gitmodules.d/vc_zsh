@@ -2,15 +2,11 @@
 	path = src/submodules/zsh/zsh-notify
 	url = https://github.com/marzocchi/zsh-notify
 [submodule "conda-zsh-completion"]
-	path = src/submodule/zsh/conda-zsh-completion
+	path = src/submodules/zsh/conda-zsh-completion
 	url = https://github.com/conda-incubator/conda-zsh-completion.git
 [submodule "nix-zsh-completions"]
-	path = src/submodule/zsh/nix-zsh-completions
+	path = src/submodules/zsh/nix-zsh-completions
 	url = https://github.com/nix-community/nix-zsh-completions.git
 [submodule "deer"]
-	path = src/submodule/zsh/deer
+	path = src/submodules/zsh/deer
 	url = https://github.com/vifon/deer.git
-
-[submodule ""]
-	path = src/submodule/zsh/
-	url =
