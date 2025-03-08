@@ -57,6 +57,7 @@ if [[ -o interactive ]]; then
   # done
 
   source ~/src/submodules/zsh/zsh-notify/notify.plugin.zsh
+  source ~/src/submodules/zsh/conda-zsh-completion/conda-zsh-completion.plugin.zsh
   source ~/src/submodules/zsh/deer/deer
 
   zle -N deer

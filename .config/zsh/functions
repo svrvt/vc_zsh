@@ -367,11 +367,11 @@ whatismyip() {
 	echo "--------------- Network Information ---------------"
 	for m in "${adapters[@]}"; do
 		echo "$m"
-		echo -n "Internal IP: "
+		echo "Internal IP: "
 		ip -4 -o addr show "$m" | awk '{print $4}' | cut -d "/" -f 1
 		echo "---------------------------------------------------"
 	done
-	echo -n "External IP: "
+	echo "External IP: "
 	dig @resolver4.opendns.com myip.opendns.com +short
 	echo "---------------------------------------------------"
 	##wget http://smart-ip.net/myip -O - -q
