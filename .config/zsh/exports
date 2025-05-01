@@ -40,10 +40,10 @@ if [[ -f "${brew_path}/bin/brew" ]]; then
 	eval "$("${brew_path}"/bin/brew shellenv)"
 fi
 
-## GUIX
-if [ -f "$HOME/.guix-profile" ]; then
+# GUIX
+if [ -L "$HOME/.guix-profile" ]; then
 	GUIX_PROFILE="/home/ru/.guix-profile"
-	source "$GUIX_PROFILE/etc/profile"
+	. "$GUIX_PROFILE/etc/profile"
 fi
 
 export GUIX_LOCPATH=$HOME/.guix-profile/lib/locale
@@ -53,12 +53,15 @@ export GUIX_LOCPATH=$HOME/.guix-profile/lib/locale
 # export GIT_SSL_CAINFO="$SSL_CERT_FILE"
 # export CURL_CA_BUNDLE="$SSL_CERT_FILE"
 
-# if [ -f "$HOME/.config/guix/current" ]; then
-# 	GUIX_PROFILE="/home/ru/.config/guix/current"
-# 	command source "$GUIX_PROFILE/etc/profile"
-# fi
-# appendToPath "$HOME"/.config/guix/current/bin
-# appendToPath "$HOME"/.guix-profile/bin
+if [ -L "$HOME/.config/guix/current" ]; then
+	export GUIX_PROFILE="/home/ru/.config/guix/current"
+	. "$GUIX_PROFILE/etc/profile"
+fi
+
+# export GUIX_LOCPATH="$GUIX_PROFILE"/lib/locale
+
+appendToPath "$HOME"/.config/guix/current/bin
+appendToPath "$HOME"/.guix-profile/bin
 
 ### Programming languages.
 ## GO
