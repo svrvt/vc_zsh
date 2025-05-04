@@ -55,7 +55,7 @@ export GUIX_LOCPATH=$HOME/.guix-profile/lib/locale
 
 if [ -L "$HOME/.config/guix/current" ]; then
 	export GUIX_PROFILE="/home/ru/.config/guix/current"
-	. "$GUIX_PROFILE/etc/profile"
+	[ -f $GUIX_PROFILE/etc/profile ] && . $GUIX_PROFILE/etc/profile
 fi
 
 # export GUIX_LOCPATH="$GUIX_PROFILE"/lib/locale
