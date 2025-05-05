@@ -2,7 +2,7 @@
 !/.config
 !/.config/mr
 !/.config/mr/available.d
-!/.config/mr/available.d/workflow.vc.zsh
+!/.config/mr/available.d/vc.zsh
 !/.config/sheldon
 !/.config/sheldon/plugins-zsh.toml
 !/.config/tealdeer
