@@ -1,4 +1,9 @@
 *
+!/bin
+!/bin/desktop
+!/bin/desktop/notify-all
+!/bin/desktop/notify-failure
+!/bin/desktop/notify-success
 !/.config
 !/.config/mr
 !/.config/mr/available.d
