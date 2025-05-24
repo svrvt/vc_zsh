@@ -1,8 +1,8 @@
 #!/bin/bash
 alias zc='$EDITOR ~/.zshrc'
 alias tc='$EDITOR ~/.config/alacritty/alacritty.toml'
-alias ac='$EDITOR ~/.config/awesome/rc.lua'
-alias nc='$EDITOR ~/.config/nvim/init.lua'
+# alias ac='$EDITOR ~/.config/awesome/rc.lua'
+# alias nc='$EDITOR ~/.config/nvim/init.lua'
 
 alias v="nvim"
 
@@ -397,10 +397,13 @@ alias root="sudo -E -s"
 
 alias sp="source $ZSHDDIR/export.private"
 
-alias am="apt-manage"
+alias sam="sudo apt-manage modify"
 alias as="apt search"
 alias aS="apt show"
+alias ac="apt-cache search"
 alias sai="sudo apt install"
+alias sar="sudo apt remove"
+alias sap="sudo apt purge"
 
 alias d="docker"
 alias dc="docker compose"

@@ -210,34 +210,10 @@ export W3M_DIR="$XDG_DATA_HOME"/w3m
 # default apps
 # export TERMINAL="alacritty"
 
-if programExists nbrowser; then
-	export BROWSER="nbrowser"
-elif programExists yandex-browser; then
-	export BROWSER=yandex-browser
-elif programExists brave-browser; then
-	export BROWSER=brave-browser
-elif programExists google-chrome; then
-	export BROWSER=google-chrome
-elif programExists firefox; then
-	export BROWSER=firefox
-else
-	export BROWSER=""
-fi
-
 if programExists w3m; then
-	export BROWSER_CLI=w3m
+	export BROWSER=w3m
 elif programExists lynx; then
-	export BROWSER_CLI=lynx
-else
-	export BROWSER_CLI=""
-fi
-
-if programExists luakit; then
-	export BROWSER_MIN=luakit
-elif programExists surf; then
-	export BROWSER_MIN=surf
-else
-	export BROWSER_MIN=""
+	export BROWSER=lynx
 fi
 
 # export FILE=ranger
