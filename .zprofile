@@ -1,7 +1,6 @@
 if systemctl -q is-active graphical.target \
+&& ! systemctl -q is-active display-manager.service \
 && [[ ! $DISPLAY && $XDG_VTNR -eq 1 ]]; then
-  # startx;
-  startx -- -nolisten tcp;
+  startx;
+  # startx -- -nolisten tcp -nolisten local; ### add to ~/.xserverrc
 fi;
-
-# export NIX_REMOTE=daemon
