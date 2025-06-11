@@ -1,38 +1,27 @@
 #!/bin/zsh
 
-
-# keysdir=~/keys
+keysdir=${keysdir:-$HOME/keys}
+store=$keysdir/password-store
 
 pass() {
 	if [ $# -gt 0 ]; then
 		for a in "$@"; do
 			case $a in
 			"otp")
-				export PASSWORD_STORE_DIR=$keysdir/$a
+				export PASSWORD_STORE_DIR=$store/$a
 				break
-				a;;
+				;;
 			"api" | "token" | "ss" | "base" | "alpha")
-				export PASSWORD_STORE_DIR=$keysdir/$a
+				export PASSWORD_STORE_DIR=$store/$a
 				shift
 				break
 				;;
 			esac
 		done
 	else
-		export PASSWORD_STORE_DIR=$keysdir/base
-	fi
-
-	TOMB_FILE=$keysdir/.tombs/secrets.tomb
-	TOMB_KEY=$keysdir/.tombkeys/secrets.tomb.key
-
-	MOUNT_DIR=$keysdir/.mount_secrets
-
-	[ -d "$PASSWORD_STORE_DIR" ] || mkdir -m 700 "$PASSWORD_STORE_DIR"
-
-	if which tomb &>/dev/null && [ -f "$TOMB_FILE" ]; then
-		if [ -z "$(command ls -A "$PASSWORD_STORE_DIR")" ]; then
-			tomb open $TOMB_FILE -k $TOMB_KEY $MOUNT_DIR
-		fi
+		PASSWORD_STORE_DIR=$store/base
+		ln -snf "$PASSWORD_STORE_DIR" "$HOME/.password-store"
+		export PASSWORD_STORE_DIR=$HOME/.password-store
 	fi
 
 	command pass "$@" ##2>/dev/null
@@ -70,7 +59,7 @@ _pass_complete_entries_helper () {
 
 	case "${cmd}" in
 		"api" | "token" | "ss" | "base" | "alpha" | "otp" )
-			local PASSWORD_STORE_DIR=$HOME/keys/${cmd}
+			local PASSWORD_STORE_DIR=$HOME/keys/password-store/${cmd}
 			;;
 	esac
 	zstyle -s ":completion:${curcontext}:" prefix prefix || prefix="${PASSWORD_STORE_DIR:-$HOME/.password-store}"
