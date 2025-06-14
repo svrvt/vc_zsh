@@ -27,10 +27,15 @@ SAVEHIST='128000'
 #ZDOTDIR=${ZDOTDIR:-${HOME}}
 ZSHDDIR=${ZSHDDIR:-${HOME}/.config/zsh}
 
+GEOMETRY_PROMPT=(geometry_path geometry_git geometry_newline geometry_virtualenv geometry_status)
+GEOMETRY_RPROMPT=(geometry_node geometry_hostname)
+
+
 # zsh_interactive=("exports" "options" "aliases" "functions" "zle" "bindings" "compctl" "style" "misc" "prompt")
 zsh_interactive=(
   "aliases"
   "notify"
+  "prompt"
 )
 
 for zi in "${zsh_interactive[@]}"; do

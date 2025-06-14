@@ -80,6 +80,7 @@ darwin*) CONDA_PREFIX="" ;;
 esac
 if [[ -f ${CONDA_PREFIX}/bin/conda ]]; then
 	eval "$("${CONDA_PREFIX}/bin/conda" "shell.zsh" "hook")"
+	CONDA_PREFIX=
 fi
 
 export PYTHONSTARTUP="$XDG_CONFIG_HOME"/python/pythonrc

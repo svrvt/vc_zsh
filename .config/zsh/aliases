@@ -6,25 +6,25 @@ alias tc='$EDITOR ~/.config/alacritty/alacritty.toml'
 
 alias v="nvim"
 
-# {{{ Use bat and exa when they are installed.
+# {{{ Use bat and eza when they are installed.
 
 [ -f /usr/bin/batcat ] && alias cat='batcat'
 
 # -------------------------------------------------------------------------- }}}
 # {{{ List
-if programExists exa; then
-	# alias ls='exa'
-	alias la="exa -laghm@ --group-directories-first --all --icons --color=always"
-	alias ll="exa -lghm@ --group-directories-first --icons"
-	alias l="exa --icons"
+if programExists eza; then
+	# alias ls='eza'
+	alias la="eza -laghm@ --group-directories-first --all --icons --color=always"
+	alias ll="eza -lghm@ --group-directories-first --icons"
+	alias l="eza --icons"
 	l.() {
 		if [ $# = 0 ]; then
-			exa -a | grep -E '^\.'
+			eza -a | grep -E '^\.'
 		else
-			exa -a "$@" | grep -E '^\.'
+			eza -a "$@" | grep -E '^\.'
 		fi
 	}
-  alias lld="exa -lD --no-filesize --no-permissions --octal-permissions --no-time"
+  alias lld="eza -lD --no-filesize --no-permissions --octal-permissions --no-time"
 else
 	# alias ls='ls --color=auto'
 	alias la='ls -la'
