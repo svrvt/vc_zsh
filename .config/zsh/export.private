@@ -70,5 +70,10 @@ _pass_complete_entries_helper () {
 
 
 
-# which gh &>/dev/null && export GITHUB_TOKEN="$(pass token github)"
+# which gh &>/dev/null && alias gh=" gh"
 
+function _gh_init(){
+	unalias gh
+	GITHUB_TOKEN=$(sp; pass token github)
+}
+alias gh="_gh_init; gh"

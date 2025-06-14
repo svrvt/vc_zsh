@@ -27,7 +27,7 @@ SAVEHIST='128000'
 #ZDOTDIR=${ZDOTDIR:-${HOME}}
 ZSHDDIR=${ZSHDDIR:-${HOME}/.config/zsh}
 
-GEOMETRY_PROMPT=(geometry_path geometry_git geometry_newline geometry_virtualenv geometry_status)
+GEOMETRY_PROMPT=(geometry_newline geometry_path geometry_git geometry_newline geometry_virtualenv geometry_status)
 GEOMETRY_RPROMPT=(geometry_node geometry_hostname)
 
 
