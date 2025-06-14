@@ -4,8 +4,8 @@
 [submodule "conda-zsh-completion"]
 	path = .local/share/zsh/submodules/conda-zsh-completion
 	url = https://github.com/conda-incubator/conda-zsh-completion.git
-[submodule "nix-zsh-completions"]
-	path = .local/share/zsh/submodules/nix-zsh-completions
+[submodule "nix-zsh-completion"]
+	path = .local/share/zsh/submodules/nix-zsh-completion
 	url = https://github.com/nix-community/nix-zsh-completions.git
 [submodule "deer"]
 	path = .local/share/zsh/submodules/deer
