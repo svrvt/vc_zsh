@@ -225,7 +225,7 @@ alias ,mf='$EDITOR $ZSHDDIR/functions'
 alias ,mzf='$EDITOR $ZSHDDIR/zsh_functions'
 alias ,mzp='$EDITOR $ZSHDDIR/prompt'
 
-alias ,mz='$EDITOR $HOME/.zshrc'
+alias ,mz='$EDITOR $ZDOTDIR/.zshrc'
 
 # -------------------------------------------------------------------------- }}}
 # {{{ tmux sessions I frequently use.

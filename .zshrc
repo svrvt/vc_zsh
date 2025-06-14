@@ -1,20 +1,14 @@
+
 if [ -n "${ZSH_DEBUGRC+1}" ]; then
     zmodload zsh/zprof
 fi
 
-
-# .zshrc
-# Author: Piotr Karbowski <piotr.karbowski@gmail.com>
-# License: beerware.
-
-# Set the "umask" (see "man umask"):
-# ie read and write for the owner only.
 # umask 002 # relaxed   -rwxrwxr-x
 # umask 022 # cautious  -rwxr-xr-x
 # umask 027 # uptight   -rwxr-x---
+# umask 066 # bofh-like -rwx--x--x
 # umask 077 # paranoid  -rwx------
-# umask 066 # bofh-like -rw-------
-umask 066
+umask 002
 
 # If root set unmask to 022 to prevent new files being created group and world writable
 if (( EUID == 0 )); then
@@ -26,64 +20,55 @@ if [ "$USER" = 'root' ] && [ "$(cut -d ' ' -f 19 /proc/$$/stat)" -gt 0 ]; then
     renice -n 0 -p "$$" && echo "# Adjusted nice level for current shell to 0."
 fi
 
-# if [ -f ~/.alert ]; then echo '>>> Check ~/.alert'; fi
-
 HISTFILE="${HOME}/.zsh_history"
 HISTSIZE='128000'
 SAVEHIST='128000'
 
-# ZDOTDIR=${ZDOTDIR:-${HOME}}
-ZSHDDIR="${HOME}/.config/zsh"
+#ZDOTDIR=${ZDOTDIR:-${HOME}}
+ZSHDDIR=${ZSHDDIR:-${HOME}/.config/zsh}
 
-# zsh_sourses=("exports" "options" "aliases" "functions" "zle" "bindings" "compctl" "style" "misc" "prompt")
-zsh_sources=(
+# zsh_interactive=("exports" "options" "aliases" "functions" "zle" "bindings" "compctl" "style" "misc" "prompt")
+zsh_interactive=(
   "aliases"
-  "prompt"
   "notify"
 )
 
-# zsh_submodule_dir="$HOME/src/submodules/zsh"
-# submodule_plugin_sources=(
-#   "zsh-notify"
-#   "deer"
-#   )
+for zi in "${zsh_interactive[@]}"; do
+  [[ -f "$ZSHDDIR/$zi" ]] && source $ZSHDDIR/$zi
+done
 
-if [[ -o interactive ]]; then
+### plugins
+plugins_dir="$HOME/.local/share/zsh/submodules"
+plugins=(
+  "zsh-notify"
+  "conda-zsh-completion"
+  "nix-zsh-completion"
+  "deer"
+  "geometry"
+  "zsh-autosuggestions"
+  "zsh-completions"
+  "zsh-syntax-highlighting"
+)
 
-  # for s in "${submodule_plugin_sources[@]}"; do
-  #   [[ -d "$zsh_submodule_dir/$s" ]] &&
-  #     plugs=$(find src/submodules/zsh/$s -type f -name \*.plugin.zsh -or -type f -name $s)
-  #     source
-  # done
+for p in "${plugins[@]}"; do
+  # [[ -d "$zsh_submodule_dir/$s" ]] &&
+  plugin=$(find "$plugins_dir/$p" -type f,l -name \*.plugin.zsh -or -type f -name "$p" 2>/dev/null)
+  [[ -r $plugin ]] && source "$plugin"
+done
 
-  source ~/src/submodules/zsh/zsh-notify/notify.plugin.zsh
-  source ~/src/submodules/zsh/conda-zsh-completion/conda-zsh-completion.plugin.zsh
-  source ~/src/submodules/zsh/deer/deer
+# if (( $+commands[sheldon] )); then
+#    export SHELDON_CONFIG_FILE="$HOME/.config/sheldon/plugins-zsh.toml"
+#    eval "$(sheldon --config-file $XDG_CONFIG_HOME/sheldon/plugins-zsh.toml source)"
+# fi
 
-  zle -N deer
-  bindkey '\ek' deer
-
-  for m in "${zsh_sources[@]}"; do
-    [[ -f "$ZSHDDIR/$m" ]] && source "$ZSHDDIR/$m"
-  done
-
-
-  #plugins
-  if (( $+commands[sheldon] )); then
-     export SHELDON_CONFIG_FILE="$HOME/.config/sheldon/plugins-zsh.toml"
-     eval "$(sheldon --config-file $XDG_CONFIG_HOME/sheldon/plugins-zsh.toml source)"
-  fi
-
-  if (( $+commands[atuin] )); then
-    eval "$(atuin init zsh)"
-  fi
-
-  if (( $+commands[navi] )); then
-    eval "$(navi widget zsh)"
-  fi
-  bindkey -s "^n" "navi\n"
-
+if (( $+commands[atuin] )); then
+  eval "$(atuin init zsh)"
 fi
+
+if (( $+commands[navi] )); then
+  eval "$(navi widget zsh)"
+fi
+bindkey -s "^n" "navi\n"
 
 # (switch to Emacs mode)
 bindkey -e
@@ -91,6 +76,7 @@ bindkey -e
 
 zle -N deer
 bindkey '\ek' deer
+
 ## Стек Каталогов
 DIRSTACKFILE="$HOME/.cache/zsh/dirs"
 if [[ -f $DIRSTACKFILE ]] && [[ $#dirstack -eq 0 ]]; then
@@ -195,8 +181,7 @@ bindkey "^S" history-incremental-pattern-search-forward
 # export PATH="$PATH:/home/ru/.hishtory"
 # source /home/ru/.hishtory/config.zsh
 
-# rest of .zshrc script
-
+# test of zsh script
 alias zt="time ZSH_DEBUGRC=1 zsh -i -c exit"
 
 if [ -n "${ZSH_DEBUGRC+1}" ]; then

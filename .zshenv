@@ -1,9 +1,7 @@
-# awesome-client "local naughty=require('naughty'); require('awful').spawn.easy_async('env', function(out) naughty.notify({title="ENV", text=out})end)"
-
 #speed up load time
 skip_global_compinit=1
 
-export XDG_DATA_DIRS=/usr/share:"$XDG_DATA_DIRS"
+# export XDG_DATA_DIRS=/usr/share:"$XDG_DATA_DIRS"
 # export XDG_CURRENT_DESKTOP="KDE"
 
 export XDG_CONFIG_HOME="$HOME/.config"
@@ -11,12 +9,14 @@ export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_STATE_HOME="$HOME/.local/state"
 export XDG_CACHE_HOME="$HOME/.cache"
 
-# GIT_HOME=$HOME/aggregate
+export ZDOTDIR=${ZDOTDIR:-${HOME}}
+export ZSHDDIR=${XDG_CONFIG_HOME}/zsh
 
-ZDOTDIR=${ZDOTDIR:-${HOME}}
-ZSHDDIR="${XDG_CONFIG_HOME}/zsh"
-
-zsh_sourses=("functions" "zsh_functions" "exports")
-for m in "${zsh_sourses[@]}"; do
-	[[ -f "$ZSHDDIR/$m" ]] && source "$ZSHDDIR/$m"
+zsh_base=(
+	"functions"
+	"zsh_functions"
+	"exports"
+)
+for zb in "${zsh_base[@]}"; do
+	[[ -f "$ZSHDDIR/$zb" ]] && source "$ZSHDDIR/$zb"
 done

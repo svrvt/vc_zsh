@@ -1,12 +1,24 @@
 [submodule "zsh-notify"]
-	path = src/submodules/zsh/zsh-notify
+	path = .local/share/zsh/submodules/zsh-notify
 	url = https://github.com/marzocchi/zsh-notify
 [submodule "conda-zsh-completion"]
-	path = src/submodules/zsh/conda-zsh-completion
+	path = .local/share/zsh/submodules/conda-zsh-completion
 	url = https://github.com/conda-incubator/conda-zsh-completion.git
 [submodule "nix-zsh-completions"]
-	path = src/submodules/zsh/nix-zsh-completions
+	path = .local/share/zsh/submodules/nix-zsh-completions
 	url = https://github.com/nix-community/nix-zsh-completions.git
 [submodule "deer"]
-	path = src/submodules/zsh/deer
+	path = .local/share/zsh/submodules/deer
 	url = https://github.com/vifon/deer.git
+[submodule "geometry"]
+	path = .local/share/zsh/submodules/geometry
+	url = https://github.com/geometry-zsh/geometry.git
+[submodule "zsh-autosuggestions"]
+	path = .local/share/zsh/submodules/zsh-autosuggestions
+	url = https://github.com/zsh-users/zsh-autosuggestions
+[submodule "zsh-completions"]
+	path = .local/share/zsh/submodules/zsh-completions
+	url = https://github.com/zsh-users/zsh-completions
+[submodule "zsh-syntax-highlighting"]
+	path = .local/share/zsh/submodules/zsh-syntax-highlighting
+	url = https://github.com/zsh-users/zsh-syntax-highlighting
