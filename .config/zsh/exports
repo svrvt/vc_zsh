@@ -1,6 +1,5 @@
-#!/bin/bash
 
-if [ -f /etc/hostname ]; then
+if [ -z $HOSTNAME ] && [ -f /etc/hostname ]; then
 	export HOSTNAME="$(cat /etc/hostname)"
 fi
 
@@ -8,15 +7,11 @@ export TMP="$HOME/tmp"
 export TEMP="$TMP"
 export TMPDIR="$TMP"
 export TMPPREFIX="${TMPDIR}/zsh"
-
-if [ ! -d "${TMP}" ]; then mkdir "${TMP}"; fi
-# Use hostname in TMUX_TMPDIR as $HOME may be on nfs.
 export TMUX_TMPDIR="${TMPDIR}/tmux-${HOST}-${UID}"
-if [ ! -d "${TMUX_TMPDIR}" ]; then mkdir -p "${TMUX_TMPDIR}"; fi
+[ -d "${TMP}" ] || mkdir "${TMP}"
+[ -d "${TMUX_TMPDIR}" ] || mkdir -p "${TMUX_TMPDIR}"
 
-##########
-
-export keysdir="$HOME/keys"
+export keysdir=$HOME/ident
 export KEYSDIR=$keysdir
 [ -d "$keysdir" ] || mkdir -m 700 "$keysdir"
 
@@ -26,11 +21,6 @@ export GNUPGHOME="$keysdir/.gnupg"
 export GPG_TTY=$(tty)
 export PASSWORD_STORE_ENABLE_EXTENSIONS=true
 
-# cleaning up home folder
-
-# export GTK2_RC_FILES="$XDG_CONFIG_HOME"/gtk-2.0/gtkrc
-
-### Packagemanagers
 ## Homebrew
 case "${OSTYPE}" in
 linux*) brew_path="/home/linuxbrew/.linuxbrew" ;;
@@ -144,38 +134,32 @@ export RBENV_ROOT=${XDG_DATA_HOME:-$HOME/.local/share}/rbenv
 # Julia
 # export JULIA_DEPOT_PATH="$XDG_DATA_HOME/julia:$JULIA_DEPOT_PATH"
 
+# if dirExists ${XDG_DATA_HOME}/dotnet; then
+#   DOTNET_ROOT=${XDG_DATA_HOME}/dotnet
+#   export PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools
+# else
+#   DOTNET_ROOT=""
+# fi
+# export DOTNET_ROOT
 
 # PATH
 BIN_HOME=$HOME/bin
-export BIN_HOME
-# bin_dirs=("rofi" "net")
-# for d in "${bin_dirs[@]}"; do
-# 	[[ -d "$BIN_HOME/$d" ]] && eval BIN_"$d"="$BIN_HOME/$d" && export BIN_"$d" && appendToPath BIN_"$d"
 for d in $(find "$BIN_HOME" -maxdepth 1 -type d); do
 	appendToPath "$d"
 done
+# export PATH="$PATH:${$(find ~/.local/bin -maxdepth 1 -type d -printf %p:)%%:}"
 
-###
 appendToPath "$HOME"/bin
 prependToPath "$HOME"/.local/bin
 # appendToPath "/usr/games"
 
-# Adds ~/.local/bin and subfolders to $PATH
-# export PATH="$PATH:${$(find ~/.local/bin -maxdepth 1 -type d -printf %p:)%%:}"
-
-# LM Studio CLI tool (lms)
 appendToPath "$HOME"/.cache/lm-studio/bin
-
-###############
-
-# Environment variables
 
 # export ZSH_PLUGINS_ALIAS_TIPS_TEXT="Alias: "
 # export ZSH_TMUX_AUTOSTART='false'
 # export ZSH_TMUX_AUTOSTART_ONCE='false'
 # export ZSH_TMUX_AUTOCONNECT='false'
 # export DISABLE_AUTO_TITLE='true'
-
 
 export JUPYTER_CONFIG_DIR="$XDG_CONFIG_HOME/jupyter"
 
@@ -185,8 +169,6 @@ export SQLITE_HISTORY="$XDG_CACHE_HOME"/sqlite_history
 
 export W3M_DIR="$XDG_DATA_HOME"/w3m
 
-#export VIMRUNTIME=/usr/share/nvim/runtime
-
 # export LC_ALL=ru_RU.UTF-8
 # export LANG=ru_RU.UTF-8
 # export LANGUAGE=ru_RU.UTF-8
@@ -194,35 +176,22 @@ export W3M_DIR="$XDG_DATA_HOME"/w3m
 # export LD_LIBRARY_PATH=$HOME/miniconda3/envs/JupyterSystemEnv/lib:$LD_LIBRARY_PATH
 # export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
 
-# {{{ History and path
-
-# -------------------------------------------------------------------------- }}}
-# {{{ Ibus settings
-
+#Ibus settings
 #type ibus-setup in terminal to change settings and start the daemon
 #delete the hashtags of the next lines and restart
 #export GTK_IM_MODULE=ibus
 #export XMODIFIERS=@im=dbus
 #export QT_IM_MODULE=ibus
 
-# -------------------------------------------------------------------------- }}}
-# {{{ Default Browers, File Manager, and 256 colors.
-
-# default apps
 # export TERMINAL="alacritty"
+# export FILE=ranger
+# export TERM=xterm-256color
 
 if programExists w3m; then
 	export BROWSER=w3m
 elif programExists lynx; then
 	export BROWSER=lynx
 fi
-
-# export FILE=ranger
-# export TERM=xterm-256color
-
-export MANPAGER="less -R --use-color -Dd+r -Du+b"
-# -------------------------------------------------------------------------- }}}
-# {{{ autodoc location.
 
 # if  dirExists ${GITHOME}/autodoc; then
 #   AUTODOCPATH=${GITHOME}/autodoc
@@ -232,9 +201,6 @@ export MANPAGER="less -R --use-color -Dd+r -Du+b"
 # fi
 # export AUTODOCPATH
 
-# -------------------------------------------------------------------------- }}}
-# {{{ docbld location and function.  These must go together.
-
 # if dirExists ${GITHOME}/docbld; then
 #   DOCBLDPATH=${GITHOME}/docbld
 # else
@@ -243,25 +209,25 @@ export MANPAGER="less -R --use-color -Dd+r -Du+b"
 # fi
 # export DOCBLDPATH
 
-# -------------------------------------------------------------------------- }}}
-# {{{ dotnet
-
-# if dirExists ${XDG_DATA_HOME}/dotnet; then
-#   DOTNET_ROOT=${XDG_DATA_HOME}/dotnet
-#   export PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools
+# if dirExists ${GITHOME}/newdoc; then
+#    NEWDOCPATH=${GITHOME}/newdoc
 # else
-#   DOTNET_ROOT=""
+#    [[ $echoWarning == 1 ]] && echo "WARNING: newdoc is not installed."
+#   NEWDOCPATH=""
 # fi
-# export DOTNET_ROOT
+# export NEWDOCPATH
+#
+# if [[ -d ${NEWDOCPATH} ]]; then
+#   newdoc() {
+#     ${NEWDOCPATH}/newdoc "$@"
+#   }
+# fi
 
-# -------------------------------------------------------------------------- }}}
-# {{{ Editor.
-
-export MANWIDTH=76
+#export VIMRUNTIME=/usr/share/nvim/runtime
 
 if programExists nvim; then
 	EDITOR=$(which nvim)
-else
+elif programExists vim; then
 	EDITOR=$(which vim)
 fi
 export EDITOR
@@ -270,8 +236,9 @@ export VISUAL="nvim"
 export PAGER="less -R"
 export READER="zathura"
 export SYSTEMD_EDITOR=$EDITOR
-# -------------------------------------------------------------------------- }}}
-# {{{ FZF customizations
+
+export MANPAGER="less -R --use-color -Dd+r -Du+b"
+export MANWIDTH=76
 
 # export FZF_DEFAULT_COMMAND='rg --files --no-ignore-vcs --hidden'
 # Fzf
@@ -293,24 +260,4 @@ export SYSTEMD_EDITOR=$EDITOR
 # export FZF_CTRL_T_COMMAND='fd -t f -HF -E=.git -E=node_modules'
 # export FZF_TMUX_OPTS='-p 90%'
 
-# -------------------------------------------------------------------------- }}}
-# {{{ newdoc location and functions.  These must go together.
-
-# if dirExists ${GITHOME}/newdoc; then
-#    NEWDOCPATH=${GITHOME}/newdoc
-# else
-#    [[ $echoWarning == 1 ]] && echo "WARNING: newdoc is not installed."
-#   NEWDOCPATH=""
-# fi
-# export NEWDOCPATH
-#
-# if [[ -d ${NEWDOCPATH} ]]; then
-#   newdoc() {
-#     ${NEWDOCPATH}/newdoc "$@"
-#   }
-# fi
-
-# -------------------------------------------------------------------------- }}}
-
-export NVIM_APPNAME=nvim-rafi
 # vim: ft=zsh syntax=sh

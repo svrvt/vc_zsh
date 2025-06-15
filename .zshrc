@@ -77,7 +77,7 @@ bindkey -s "^n" "navi\n"
 
 # (switch to Emacs mode)
 bindkey -e
-# bindkey -v
+#bindkey -v
 
 zle -N deer
 bindkey '\ek' deer
@@ -126,17 +126,17 @@ zstyle -e ':completion:*:hosts' hosts 'reply=(
 )'
 
 zstyle ':completion:*:users' ignored-patterns \
-  adm amanda apache avahi backup beaglidx bin brltty cacti canna clamav \
-  colord cups cups-pk-helper daemon dbus debian-tor dhcpcd distcache \
-  dnscrypt-proxy dnsmasq dovecot earlyoom fax flatpak ftp fwupd-refresh \
-  games gdm geoclue git gitlab-runner gkrellmd gluster gnats gopher hacluster \
-  haldaemon halt hsqldb http i2psvc ident irc junkbust keydope landscape ldap \
+  adm amanda apache 'avahi*' backup beaglidx bin brltty cacti canna clamav \
+  colord cups cups-pk-helper daemon dbus '[D,d]ebian-*' dhcpcd distcache \
+  dnscrypt-proxy dnsmasq dovecot earlyoom epmd fax flatpak ftp fwupd-refresh \
+  games gdm geoclue git gitlab-runner gkrellmd gluster gnats gopher 'guixbuilder*' \
+  hacluster haldaemon halt hsqldb http i2psvc ident irc junkbust keydope landscape ldap \
   lightdm list lp lxd mail mailman mailnull man messagebus miniflux mldonkey \
   mpd mysql nagios named netdump news nfsnobody nm-openconnect nobody nscd ntp \
   nut nvidia-persistenced nx openvpn operator pcap polkitd pollinate postfix \
   postgres privoxy proxy pulse pvm quagga radvd root rpc rpcuser rpm rtkit \
-  saned sddm shutdown squid sshd sync sys syslog 'systemd-*' tcpdump tor \
-  transmission tss usbmux uucp uuidd vcsa www-data xfs '_*'
+  saned sddm shutdown speech-dispatcher squid sshd sync sys syslog 'systemd-*' \
+  tcpdump tor transmission tss usbmux uucp uuidd vcsa www-data xfs yaws '_*'
 
 zstyle ':completion:*:(ssh|scp|rsync):*' tag-order \
   'hosts:-host:host hosts:-ipaddr:ip\ address *'
