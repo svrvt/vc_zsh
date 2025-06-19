@@ -65,12 +65,11 @@ appendToPath "$GOBIN"
 export CONDA_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/miniconda3"
 export CONDARC="${XDG_CONFIG_HOME:-$HOME/.config}/conda/.condarc"
 case "${OSTYPE}" in
-linux*) CONDA_PREFIX="$CONDA_ROOT" ;;
-darwin*) CONDA_PREFIX="" ;;
+linux*) CONDA_EXE="${CONDA_ROOT}/bin/conda" ;;
+darwin*) CONDA_EXE="" ;;
 esac
-if [[ -f ${CONDA_PREFIX}/bin/conda ]]; then
-	eval "$("${CONDA_PREFIX}/bin/conda" "shell.zsh" "hook")"
-	CONDA_PREFIX=
+if [[ -f $CONDA_EXE ]]; then
+	eval "$("${CONDA_EXE}" "shell.zsh" "hook")"
 fi
 
 export PYTHONSTARTUP="$XDG_CONFIG_HOME"/python/pythonrc
