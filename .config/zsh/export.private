@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-keysdir=${keysdir:-$HOME/keys}
+keysdir=${keysdir:-$HOME/ident}
 store=$keysdir/password-store
 
 pass() {
@@ -11,7 +11,7 @@ pass() {
 				export PASSWORD_STORE_DIR=$store/$a
 				break
 				;;
-			"api" | "token" | "ss" | "base" | "alpha")
+			"api" | "token" | "ss" | "site" )
 				export PASSWORD_STORE_DIR=$store/$a
 				shift
 				break
@@ -19,7 +19,7 @@ pass() {
 			esac
 		done
 	else
-		PASSWORD_STORE_DIR=$store/base
+		PASSWORD_STORE_DIR=$store/site
 		ln -snf "$PASSWORD_STORE_DIR" "$HOME/.password-store"
 		export PASSWORD_STORE_DIR=$HOME/.password-store
 	fi
@@ -35,8 +35,7 @@ _pass () {
 			"api:API keys"
 			"token:Tokens"
 			"ss:Recovery keys"
-			"base:Base passwords"
-			"alpha:Alpha passwords"
+			"site:Base passwords"
 			"otp:OneTimePassword"
 		)
 		_describe -t commands 'pass' subdir
@@ -58,8 +57,8 @@ _pass_complete_entries_helper () {
 	local prefix
 
 	case "${cmd}" in
-		"api" | "token" | "ss" | "base" | "alpha" | "otp" )
-			local PASSWORD_STORE_DIR=$HOME/keys/password-store/${cmd}
+		"api" | "token" | "ss" | "site" | "otp" )
+			local PASSWORD_STORE_DIR=$store/${cmd}
 			;;
 	esac
 	zstyle -s ":completion:${curcontext}:" prefix prefix || prefix="${PASSWORD_STORE_DIR:-$HOME/.password-store}"

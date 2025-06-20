@@ -68,7 +68,7 @@ case "${OSTYPE}" in
 linux*) CONDA_EXE="${CONDA_ROOT}/bin/conda" ;;
 darwin*) CONDA_EXE="" ;;
 esac
-if [[ -f $CONDA_EXE ]]; then
+if [ -f $CONDA_EXE ]; then
 	eval "$("${CONDA_EXE}" "shell.zsh" "hook")"
 fi
 
