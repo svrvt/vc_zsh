@@ -14,7 +14,6 @@ export ZSHDDIR=${XDG_CONFIG_HOME}/zsh
 
 zsh_base=(
 	"functions"
-	"zsh_functions"
 	"exports"
 )
 for zb in "${zsh_base[@]}"; do

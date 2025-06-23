@@ -1,40 +1,23 @@
-# {{{ A check for the existence of a directory.
-
 dirExists() {
 	[[ -d "$1" ]]
 }
-
-# -------------------------------------------------------------------------- }}}
-# {{{ A check for the existence of a file.
 
 fileExists() {
 	[[ -f "$1" ]]
 }
 
-# -------------------------------------------------------------------------- }}}
-# {{{ A check for the host name.
-
 hostName() {
 	[[ ${HOSTNAME} = "$1" ]]
 }
-
-# -------------------------------------------------------------------------- }}}
-# {{{ A check for the existence of a program on my path.
 
 programExists() {
 	# which "$1" &>/dev/null
   (( $+commands[$1] ))
 }
 
-# -------------------------------------------------------------------------- }}}
-# {{{ A check for the operating system type.
-
 osType() {
 	[[ ${OSTYPE} = "$1" ]]
 }
-
-# -------------------------------------------------------------------------- }}}
-# {{{ Append to PATH
 
 appendToPath() {
 	if dirExists "$1"; then
@@ -42,17 +25,11 @@ appendToPath() {
 	fi
 }
 
-# -------------------------------------------------------------------------- }}}
-# {{{ Prepend to PATH
-
 prependToPath() {
 	if dirExists "$1"; then
 		[[ ":$PATH:" != *"$1"* ]] && export PATH="$1:${PATH}"
 	fi
 }
-
-# -------------------------------------------------------------------------- }}}
-# {{{ Append to INFOPATH
 
 appendToInfoPath() {
 	if dirExists "$1"; then
@@ -60,20 +37,21 @@ appendToInfoPath() {
 	fi
 }
 
-# -------------------------------------------------------------------------- }}}
-# {{{ Append to MANPATH
-
 appendToManPath() {
 	if dirExists "$1"; then
 		[[ ":$MANPATH:" != *"$1"* ]] && export MANPATH="${MANPATH}:$1"
 	fi
 }
 
-# -------------------------------------------------------------------------- }}}
-# {{{ Generating a new SSH key and adding it to the ssh-agent
-#     https://help.github.com/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent
+
+
+
+
+# Generating a new SSH key and adding it to the ssh-agent
+# https://help.github.com/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent
 
 SSHHOME="$HOME/.ssh"
+
 sshkeys() {
 	if [[ -d ${SSHHOME} ]]; then
 		eval "$(ssh-agent -s)"
@@ -95,11 +73,6 @@ sshkill() {
 	killall ssh-agent
 }
 
-latexmkkill() {
-	for pid in $(ps aux | awk '/latexmk/ {print $2}'); do kill -9 "$pid"; done
-	for pid in $(ps aux | awk '/perl/    {print $2}'); do kill -9 "$pid"; done
-}
-
 sshstart() {
 	if programExists /etc/init.d/ssh; then
 		sudo /etc/init.d/ssh start
@@ -112,44 +85,57 @@ sshstop() {
 	fi
 }
 
-# -------------------------------------------------------------------------- }}}
-# {{{ Use LaTeX make to generate a document.
+
+
+
+
+
+
+todos() {
+	cd "${NOTES_ROOT:-$XDG_DOCUMENTS_DIR/notes}" || return
+	$EDITOR "$(rg -le '- \[ \]' --sort created | fzf)"
+	cd - || return
+}
+
+
+latexmkkill() {
+	for pid in $(ps aux | awk '/latexmk/ {print $2}'); do kill -9 "$pid"; done
+	for pid in $(ps aux | awk '/perl/    {print $2}'); do kill -9 "$pid"; done
+}
 
 pdf() {
 	latexmk -pdf -verbose -file-line-error -synctex=1 -interaction=nonstopmode -cd "$1"
 }
 
-# -------------------------------------------------------------------------- }}}
-# {{{ Archvie extractor
 
-# ex = EXtractor for all kinds of archives
-# usage: ex <file>
-
-ex() {
-	if [ -f "$1" ]; then
-		case "$1" in
-		*.tar.bz2)  tar xjf "$1" ;;
-		*.tar.gz)   tar xzf "$1" ;;
-		*.bz2)      bunzip2 "$1" ;;
-		*.rar)      unrar x "$1" ;;
-		*.gz)       gunzip "$1" ;;
-		*.tar)      tar xf "$1" ;;
-		*.tbz2)     tar xjf "$1" ;;
-		*.tgz)      tar xzf "$1" ;;
-		*.zip)      unzip "$1" ;;
-		*.Z)        uncompress "$1" ;;
-		*.7z)       7zz x "$1" ;;
-		*deb)       ar x "$1" ;;
-		*.tar.xz)   tar xf "$1" ;;
-		*.tar.zst)  unzstd "$1" ;;
-		*) echo "'$1' cannot be extracted via ex()" ;;
-		esac
+view_csv() {
+	if programExists tidy-viewer; then
+		tidy-viewer "$1"
 	else
-		echo "'$1' is not a valid file"
+		command cat "$1" | head -n 25 | column -ts,
+		# command cat "$1" | column -t -s, | less -S
 	fi
 }
+alias csv=view_csv
 
-# Extracts any archive(s) (if unp isn't installed)
+# Searches for text in all files in the current folder
+ftext() {
+	# -i case-insensitive
+	# -I ignore binary files
+	# -H causes filename to be printed
+	# -r recursive search
+	# -n causes line number to be printed
+	# optional: -F treat search term as a literal, not a regular expression
+	# optional: -l only print filenames and not the matching lines ex. grep -irl "$1" *
+	grep -iIHrn --color=always "$1" . | less -r
+}
+
+
+
+
+
+
+
 extract() {
 	for archive in "$@"; do
 		if [ -f "$archive" ]; then
@@ -165,52 +151,23 @@ extract() {
 			*.zip)      unzip $archive ;;
 			*.Z)        uncompress $archive ;;
 			*.7z)       7z x $archive ;;
-			*) echo "don't know how to extract '$archive'..." ;;
+      *deb)       ar x "$1" ;;
+      *.tar.xz)   tar xf "$1" ;;
+      *.tar.zst)  unzstd "$1" ;;
+		  *) echo "'$1' cannot be extracted via exstract()" ;;
 			esac
 		else
 			echo "'$archive' is not a valid file!"
 		fi
 	done
 }
-# -------------------------------------------------------------------------- }}}
 
-# man() {
-# 	env \
-# 		LESS_TERMCAP_mb="$(printf "\e[1;31m")" \
-# 		LESS_TERMCAP_md="$(printf "\e[1;36m")" \
-# 		LESS_TERMCAP_me="$(printf "\e[0m")" \
-# 		LESS_TERMCAP_se="$(printf "\e[0m")" \
-# 		LESS_TERMCAP_so="$(printf "\e[1;44;33m")" \
-# 		LESS_TERMCAP_ue="$(printf "\e[0m")" \
-# 		LESS_TERMCAP_us="$(printf "\e[1;32m")" \
-# 		PAGER="${commands[less]:-$PAGER}" \
-# 		NROFF_U=1 \
-# 		PATH="$HOME/bin:$PATH" \
-# 		man "$@"
-# }
 
-# export LESS_TERMCAP_mb=$'\E[01;31m'
-# export LESS_TERMCAP_md=$'\E[01;31m'
-# export LESS_TERMCAP_me=$'\E[0m'
-# export LESS_TERMCAP_se=$'\E[0m'
-# export LESS_TERMCAP_so=$'\E[01;44;33m'
-# export LESS_TERMCAP_ue=$'\E[0m'
-# export LESS_TERMCAP_us=$'\E[01;32m'
 
-# Only show files which have $1 present in contents
-# FIX:hilight
-# fz() {
-# 	local line
-# 	line=$(rg "$1" | fzf -m --height=20) &&
-# 		# $EDITOR $(cut -d':' -f1 <<<"$line") +$(cut -d':' -f2 <<<"$line")
-# 		$EDITOR $(cut -d':' -f1 <<< $line)
-# }
 
-todos() {
-	cd "$NOTES_ROOT" || return
-	$EDITOR "$(rg -le '- \[ \]' --sort created | fzf)"
-	cd - || return
-}
+
+
+
 
 unLock() {
 	for pid in $(ps aux | grep " apt " | awk '{print $2}'); do
@@ -232,63 +189,6 @@ unLock() {
 # 	sudo dpkg --configure -a
 # }
 
-# Use the best version of pico installed
-edit() {
-	if [ "$(type -t nvim)" = "file" ]; then
-		nvim "$@"
-	elif [ "$(type -t nano)" = "file" ]; then
-		nano -c "$@"
-	elif [ "$(type -t pico)" = "file" ]; then
-		pico "$@"
-	fi
-}
-
-sv() {
-	if [ "$(type -t nvim)" = "file" ]; then
-		sudo -Es nvim "$@"
-	elif [ "$(type -t nano)" = "file" ]; then
-		sudo nano -c "$@"
-	elif [ "$(type -t pico)" = "file" ]; then
-		sudo pico "$@"
-	fi
-}
-
-
-# Searches for text in all files in the current folder
-ftext() {
-	# -i case-insensitive
-	# -I ignore binary files
-	# -H causes filename to be printed
-	# -r recursive search
-	# -n causes line number to be printed
-	# optional: -F treat search term as a literal, not a regular expression
-	# optional: -l only print filenames and not the matching lines ex. grep -irl "$1" *
-	grep -iIHrn --color=always "$1" . | less -r
-}
-
-# Copy and go to the directory
-cpg() {
-	if [ -d "$2" ]; then
-		cp "$1" "$2" && cd "$2" || exit
-	else
-		cp "$1" "$2"
-	fi
-}
-
-# Move and go to the directory
-mvg() {
-	if [ -d "$2" ]; then
-		mv "$1" "$2" && cd "$2" || exit
-	else
-		mv "$1" "$2"
-	fi
-}
-
-# Create and go to the directory
-mkg() {
-	mkdir -p "$1"
-	cd "$1" || exit
-}
 
 # Goes up a specified number of directories  (i.e. up 4)
 up() {
@@ -304,37 +204,13 @@ up() {
 	cd "$d" || exit
 }
 
-#Automatically do an ls after each cd
-# cd ()
-# {
-# 	if [ -n "$1" ]; then
-# 		builtin cd "$@" && ls
-# 	else
-# 		builtin cd ~ && ls
-# 	fi
-# }
-
 # Returns the last 2 fields of the working directory
 pwdtail() {
 	pwd | awk -F/ '{nlast = NF -1;print $nlast"/"$NF}'
 }
 
-##Show current network information
-# if [ "$HOST" = vaio ]; then
-# 	radio_adapter=wlp7s0
-# 	lan_adapter=enp19s0
-# elif [ "$HOST" = pcRU ]; then
-# 	radio_adapter=wlx60e32716669c
-# 	lan_adapter=enp2s0
-# fi
-#
-# adapters=("$lan_adapter" "$radio_adapter")
 
-# check_adapters() {
-# 	source "$BIN_net"/check_adapters.sh
-# 	# adapters=($lan_list $wan_list $docker_list)
-# 	adapters=($lan_list $wan_list)
-# }
+
 
 check_adapters() {
 	adapters=()
@@ -344,48 +220,35 @@ check_adapters() {
 }
 
 netinfo() {
-	check_adapters
-	echo "--------------- Network Information ---------------"
+  check_adapters
 	for m in "${adapters[@]}"; do
-		echo "$m"
-		# echo ""
+		echo "$YELLOW$m $NC"
 		/sbin/ifconfig "$m" | awk /'inet / {print "IPV4: " $2}'
-		# echo ""
 		/sbin/ifconfig "$m" | awk /'broadcast / {print "BROADCAST: " $6}'
-		# echo ""
 		/sbin/ifconfig "$m" | awk /'inet / {print "NETMASK: " $4}'
-		# echo ""
 		/sbin/ifconfig "$m" | awk /'ether / {print "MAC: " $2}'
-		# /sbin/ip link show "$m" | awk /'ether / {print "MAC: " $2 "\t " $4}'
-		echo "---------------------------------------------------"
+	  echo ""
 	done
 }
 
 # IP address lookup
-whatismyip() {
+myip() {
 	check_adapters
-	echo "--------------- Network Information ---------------"
 	for m in "${adapters[@]}"; do
-		echo "$m"
+		echo "$YELLOW$m $NC"
 		echo "Internal IP: "
 		ip -4 -o addr show "$m" | awk '{print $4}' | cut -d "/" -f 1
-		echo "---------------------------------------------------"
+	  echo ""
 	done
 	echo "External IP: "
 	dig @resolver4.opendns.com myip.opendns.com +short
-	echo "---------------------------------------------------"
+	echo ""
 	##wget http://smart-ip.net/myip -O - -q
 }
 
-# GitHub Titus Additions
 
-gcomp() {
-	git add .
-	git commit -m "$1"
-	git push
-}
 
-#######
+
 
 setEnv() {
 	[[ -d "$1" ]] || python3 -m venv "$1"
@@ -430,31 +293,32 @@ pyEnv() {
 	source "$PyEnvName"/bin/activate
 }
 
+
+
+
+
 fzf-surfraw() { surfraw "$(command cat ~/.config/surfraw/bookmarks | sed '/^$/d' | sort -n | fzf -e)"; }
 
 # start fuzzy finder frontend to greenclip
 fzf-clipboard() { echo -n "$(greenclip print | fzf -e -i)" | xclip -selection clipboard; }
-# greenclip configuration settings
+
 cfg-greenclip() {
 	killall greenclip
 	$EDITOR ~/.config/greenclip.cfg && nohup greenclip daemon >/dev/null 2>&1 &
 }
-# greenclip reload
+
 rld-greenclip() {
 	killall greenclip
 	nohup greenclip daemon >/dev/null 2>&1 &
 }
-# greenclip clear history
+
 derez-greenclip() {
 	killall greenclip
 	rm ~/.cache/greenclip.history && nohup greenclip daemon >/dev/null 2>&1 &
 }
 
-#-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-# functions in zshrc
-#
-# Functions
-# -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+
 
 run_under_tmux() {
 	# Run $1 under session or attach if such session already exist.
@@ -485,18 +349,14 @@ run_under_tmux() {
 	fi
 }
 
-irc() { run_under_tmux irssi "TERM='screen' command irssi"; }
-#-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-view_csv() {
-	if programExists tidy-viewer; then
-		tidy-viewer "$1"
-	else
-		command cat "$1" | head -n 25 | column -ts,
-		# command cat "$1" | column -t -s, | less -S
-	fi
-}
-alias csv=view_csv
+
+
+
+irc() { run_under_tmux irssi "TERM='screen' command irssi"; }
+
+
+
 
 yt() {
 	if programExists yt-dlp; then
@@ -508,21 +368,6 @@ yt() {
 	fi
 }
 
-fzf_select_path() {
-	sed "s%^${HOME}%~%" |
-		fzf --select-1 --exit-0 --toggle-sort=ctrl-r \
-			--preview='terminal-file-preview --image-preview {}' \
-			--preview-window=right:60% "$@" |
-		sed "s%^~%${HOME}%"
-}
-
-fzf_select_dir() {
-	fzf_select_path "$@"
-}
-
-fzf_select_file() {
-	fzf_select_path "$@"
-}
 
 path() { sed 's/:/\n/g' <(echo $PATH) }
   
@@ -531,16 +376,10 @@ fpath() { sed 's/ /\n/g' <(echo $fpath); }
 lpath() { luarocks path | grep -E 'LUA_PATH+|LUA_CPATH' | cut -d '=' -f 2 | sed "s/'//g" | tr ';' '\n' }
 
 ew() { $EDITOR "$(which "$1")" }
+
 eg() { 
   list="$(grep -Rl $1 $2)"
   $EDITOR $(echo $list)
 }
 
-
-# open-last-command() {
-#   $EDITOR $(which $(history | head -1 | awk '{print $2}'))
-# }
-# bindkey -s "e\t" "open-last-command^M"
-# bindkey -s "e\t" "$EDITOR $(which !!)^M"
-
-# vim: ft=zsh syntax=sh
+# vim: ft=zsh syntax=bash

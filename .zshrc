@@ -34,8 +34,9 @@ GEOMETRY_RPROMPT=(geometry_node geometry_hostname)
 # zsh_interactive=("exports" "options" "aliases" "functions" "zle" "bindings" "compctl" "style" "misc" "prompt")
 zsh_interactive=(
   "aliases"
-  "notify"
+  #"completions"
   "prompt"
+  "notify"
 )
 
 for zi in "${zsh_interactive[@]}"; do

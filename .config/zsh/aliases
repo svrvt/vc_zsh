@@ -1,17 +1,9 @@
 #!/bin/bash
-alias zc='$EDITOR ~/.zshrc'
+
 alias tc='$EDITOR ~/.config/alacritty/alacritty.toml'
-# alias ac='$EDITOR ~/.config/awesome/rc.lua'
-# alias nc='$EDITOR ~/.config/nvim/init.lua'
-
-alias v="nvim"
-
-# {{{ Use bat and eza when they are installed.
 
 [ -f /usr/bin/batcat ] && alias cat='batcat'
 
-# -------------------------------------------------------------------------- }}}
-# {{{ List
 if programExists eza; then
 	# alias ls='eza'
 	alias la="eza -laghm@ --group-directories-first --all --icons --color=always"
@@ -62,79 +54,60 @@ alias labc='command ls -lap' #alphabetical sort
 # alias lf="ls -l | egrep -v '^d'" # files only
 alias ldir="command ls -l | egrep '^d'" # directories only
 
-# -------------------------------------------------------------------------- }}}
-# {{{ Grep
 
-# Colorize the grep command output for ease of use (good for log files).
+
+
 
 alias grep='grep --color=auto'
 alias egrep='egrep --color=auto'
 alias fgrep='fgrep --color=auto'
 
-# -------------------------------------------------------------------------- }}}
-# {{{ Administrative aliases
 
-# readable output
 alias df='df -h'
 
-# apt unlock
+
 alias unlock="sudo rm /var/lib/apt/lists/lock"
 
-# free
 alias free="free -mt"
 
-# use all cores
-# alias uac="sh ~/.bin/main/000*"
-
-# continue download
 alias wget="wget -c"
 
-# userlist
 alias userlist="cut -d: -f1 /etc/passwd"
 
-# merge new settings
-# alias merge="xrdb -merge ~/.Xresources"
-
-# Aliases for software managment
 alias update='sudo apt update && sudo apt upgrade -y'
 
-# ps
 alias psa="ps auxf"
 
-# grub update
 alias update-grub="sudo grub-mkconfig -o /boot/grub/grub.cfg"
 
 #grub issue 08/2022
 alias install-grub-efi="sudo grub-install --target=x86_64-efi --efi-directory=/boot/efi"
 
-# add new fonts
+
+
 alias update-fc='sudo fc-cache -fv'
 
-# switch between bash and zsh
+
+
 alias tobash="sudo chsh $USER -s /usr/bin/bash && echo 'Now log out.'"
 alias tozsh="sudo chsh $USER -s /usr/bin/zsh && echo 'Now log out.'"
 
-#switch between lightdm and sddm
+
+
 alias tolightdm="sudo apt install lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings ; sudo systemctl enable lightdm.service -f ; echo 'Lightm is active - reboot now'"
 alias tosddm="sudo apt install sddm ; sudo systemctl enable sddm.service -f ; echo 'Sddm is active - reboot now'"
 alias toly="sudo apt install ly ; sudo systemctl enable ly.service -f ; echo 'Ly is active - reboot now'"
 alias togdm="sudo apt install gdm ; sudo systemctl enable gdm.service -f ; echo 'Gdm is active - reboot now'"
 alias tolxdm="sudo apt install lxdm ; sudo systemctl enable lxdm.service -f ; echo 'Lxdm is active - reboot now'"
 
-# quickly kill picom
 alias kpi='killall picom'
 
-# hardware info --short
 alias hw="hwinfo --short"
 
-# -------------------------------------------------------------------------- }}}
-# {{{ Virtual box
-
+##Virtual box
 # mounting the folder Public for exchange between host and guest on virtualbox
 # alias vbm="sudo mount -t vboxsf -o rw,uid=1000,gid=1000 Public /home/$USER/Public"
 
-# -------------------------------------------------------------------------- }}}
-# {{{ Youtube
 
 alias yta-aac="yt-dlp --extract-audio --audio-format aac "
 alias yta-best="yt-dlp --extract-audio --audio-format best "
@@ -142,42 +115,23 @@ alias yta-flac="yt-dlp --extract-audio --audio-format flac "
 alias yta-mp3="yt-dlp --extract-audio --audio-format mp3 "
 alias ytv-best="yt-dlp -f 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio' --merge-output-format mp4 "
 
-# -------------------------------------------------------------------------- }}}
-# {{{ Job control
 
-# get the error messages from journalctl
 alias jctl="journalctl -p 3 -xb"
 
-# -------------------------------------------------------------------------- }}}
-# {{{ Important configuration files
 
 alias ngrubconf='sudo $EDITOR /boot/grub/grub.cfg'
 alias ngrub='sudo $EDITOR /etc/default/grub'
 
-# -------------------------------------------------------------------------- }}}
-# {{{ gpg
 
-# verify signature for isos
 alias gpg-check="gpg --keyserver-options auto-key-retrieve --verify"
 
-# receive the key of a developer
 alias gpg-retrieve="gpg --keyserver-options auto-key-retrieve --receive-keys"
 
-# -------------------------------------------------------------------------- }}}
-# {{{ shutdown or reboot or lock screen.
 
 alias i3l="i3lock -i $HOME/Downloads/git_ch.png"
 
-# -------------------------------------------------------------------------- }}}
-# {{{ General purpose aliases.
-
-if [[ $(rg --ignore-case '"Ubuntu' /etc/os-release -c 2>/dev/null) -gt 0 ]]; then
-	alias fd='fdfind'
-	alias fde='fdfind --no-ignore --extension'
-else
-	alias fde='fd --no-ignore --extension'
-fi
 alias fgrep='fgrep --color=auto'
+
 alias ga='git add'
 alias gP='git pull'
 alias gc='git commit -m'
@@ -189,81 +143,75 @@ alias gp='git push'
 alias grep='grep --color=auto'
 alias gs='clear && git status'
 alias gsuo='git push --set-upstream origin'
+
+
+
+alias ga="git add"
+alias gc="git commit -m"
+# alias gl="git pull --rebase --autostash"
+
+alias gp="git push"
+alias gbrr="git for-each-ref --count=30 --sort=-committerdate refs/heads/ --format='%(refname:short)'"
+alias gdh="git diff HEAD"
+alias gg="lazygit"
+
+
+
 alias kax='sudo killall Xorg'
+
 alias l24='find . -newermt "-24 hours" -ls'
+
 alias me='clear && exec zsh'
+
 alias ssh='ssh -A'
+
 alias ta='tmux attach'
+
 alias xz='$EDITOR -c "let g:tty='\''$(tty)'\''"'
 
 alias rbe='eval "$(rbenv init - n)"'
-# -------------------------------------------------------------------------- }}}
-# {{{ Aliases to folders I visit frequently.
+
+
+
 
 alias .p='cd $HOME/paperwork'
 alias .d='cd $HOME/downloads'
 
-alias .al='cd $XDG_CONFIG_HOME/alacritty'
+alias .t='cd $XDG_CONFIG_HOME/alacritty'
 alias .aw='cd $XDG_CONFIG_HOME/awesome'
 alias .ro='cd $XDG_CONFIG_HOME/rofi'
 alias .ra='cd $XDG_CONFIG_HOME/ranger'
 
-# -------------------------------------------------------------------------- }}}
-# {{{ File I edit frequently.  These aliases mirror keybinds used in Vim.
-
-alias ,et='$EDITOR $XDG_CONFIG_HOME/tmux/tmux.conf.local'
-alias ,ev='$EDITOR $HOME/.vimrc'
-
-alias ,mb='$EDITOR $HOME/.bashrc'
-# alias ,mbp='$EDITOR /my_bash_prompt'
 
 alias ,ma='$EDITOR $ZSHDDIR/aliases'
-alias ,mc='$EDITOR $ZSHDDIR/completions'
 alias ,me='$EDITOR $ZSHDDIR/exports'
 alias ,mep='$EDITOR $ZSHDDIR/export.private'
 alias ,mf='$EDITOR $ZSHDDIR/functions'
-alias ,mzf='$EDITOR $ZSHDDIR/zsh_functions'
 alias ,mzp='$EDITOR $ZSHDDIR/prompt'
 
 alias ,mz='$EDITOR $ZDOTDIR/.zshrc'
 
-# -------------------------------------------------------------------------- }}}
-# {{{ tmux sessions I frequently use.
+
 
 alias kzsh='tmux kill-session -t zsh'
 alias knvim='tmux kill-session -t nvim'
 alias kssh='tmux kill-session -t ssh'
 
-# -------------------------------------------------------------------------- }}}
 
-# Aliases
-alias apti="sudo apt install"
-alias apts="apt search"
-alias aptr="sudo apt remove"
+
 alias cp="cp -irv"
-# alias diff="diff --color=auto"
-alias e='nvim $(files)'
-alias fd="fd -H"
-alias fdir="find . -type d -name"
-alias ffil="find . -type f -name"
-alias files="fzf --preview 'bat --color=always --style=numbers --line-range=:500 {}'"
-
-alias ga="git add"
-alias gc="git commit -m"
-# alias gl="git pull --rebase --autostash"
-alias gp="git push"
-alias gbrr="git for-each-ref --count=30 --sort=-committerdate refs/heads/ --format='%(refname:short)'"
-alias gdh="git diff HEAD"
-alias gg="lazygit"
-alias grep="grep --color=auto"
 
 # alias java8="export JAVA_HOME=/usr/lib/jvm/java-8-openjdk/jre"
 # alias java11="export JAVA_HOME=/usr/lib/jvm/java-11-openjdk/"
 
 alias mv="mv -iv"
+
 alias ncdu="ncdu --color=dark -x"
+
 alias plasmar="kquitapp5 plasmashell && kstart5 plasmashell"
+
 alias pp="prettyping --nolegend"
+
 alias rm="rm -irv"
 alias rmf="rm -rf"
 
@@ -290,6 +238,7 @@ alias sst="sudo systemctl stop"
 
 # alias tmux="tmux -u"
 alias tmuxm="tmux new-session \; split-window -h \; split-window -v \; attach"
+
 alias todo='nvim +"Telekasten goto_today"'
 
 # Causes Issues
@@ -297,31 +246,22 @@ alias todo='nvim +"Telekasten goto_today"'
 # 	alias send="kdeconnect-cli -d "$(kdeconnect-cli -a --id-only)" --share"
 # fi
 
-#######################################################
-# GENERAL ALIAS'S
-#######################################################
-# To temporarily bypass an alias, we precede the command with a \
-# EG: the ls command is aliased, but to use the normal ls command you would type \ls
-
-# Add an "alert" alias for long running commands.  Use like so:
-#   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
 # alias to show the date
 alias da='date "+%Y-%m-%d %A %T %Z"'
 
-# Alias's to modified commands
-alias cp='cp -i'
-alias mv='mv -i'
 alias mkdir='mkdir -p'
+
 alias ps='ps auxf'
+alias p="ps aux | grep "
+alias topcpu="/bin/ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
+
 alias ping='ping -c 10'
+alias openports='netstat -nape --inet'
+
 alias less='less -R'
 
-alias multitail='multitail --no-repeat -c'
-alias freshclam='sudo freshclam'
-
-# alias chmod commands
 alias mx='chmod a+x'
 alias 000='chmod -R 000'
 alias 644='chmod -R 644'
@@ -329,27 +269,20 @@ alias 666='chmod -R 666'
 alias 755='chmod -R 755'
 alias 777='chmod -R 777'
 
-# Search command line history
-alias h="history | grep "
+alias h="history"
 
-# Search running processes
-alias p="ps aux | grep "
-alias topcpu="/bin/ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
-
-# Search files in the current folder
 alias f="find . | grep "
 
-# To see if a command is aliased, a file, or a built-in command
-alias checkcommand="type -t"
-
-# Show open ports
-alias openports='netstat -nape --inet'
-
-# Alias's for safe and forced reboots
 alias rebootsafe='sudo shutdown -r now'
 alias rebootforce='sudo shutdown -r -n now'
 
-# Alias's to show disk space and space used in a folder
+alias files="fzf --preview 'bat --color=always --style=numbers --line-range=:500 {}'"
+alias e='nvim $(files)'
+
+alias fd="fd -H"
+alias fdir="find . -type d -name"
+alias ffil="find . -type f -name"
+
 alias diskspace="du -S | sort -n -r | less"
 alias folders='du -h --max-depth=1'
 alias folderssort='find . -maxdepth 1 -type d -print0 | xargs -0 du -sk | sort -rn'
@@ -366,16 +299,6 @@ alias ungz='tar -xvzf'
 
 # Show all logs in /var/log
 alias logs="sudo find /var/log -type f -exec file {} \; | grep 'text' | cut -d' ' -f1 | sed -e's/:$//g' | grep -v '[0-9]$' | xargs tail -f"
-
-# alias nvim-chad="NVIM_APPNAME=nvim-NvChad nvim"
-# alias nvim-astro="NVIM_APPNAME=nvim-AstroNvim nvim"
-# alias nvim-lazy="NVIM_APPNAME=nvim-LazyVim nvim"
-# alias nvim-kick="NVIM_APPNAME=nvim-Kickstart nvim"
-# alias nvim-lazyman="NVIM_APPNAME=nvim-Lazyman nvim"
-#alias v="NVIM_APPNAME=nvim nvim"
-
-alias sr="SURFRAW_graphical=no sr"
-alias srg="surfraw -g"
 
 # alias rcp='rsync -v --progress'
 # alias rmv='rsync -v --progress --remove-source-files'
