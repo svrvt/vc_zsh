@@ -30,19 +30,6 @@ ZSHDDIR=${ZSHDDIR:-${HOME}/.config/zsh}
 GEOMETRY_PROMPT=(geometry_newline geometry_path geometry_git geometry_newline geometry_virtualenv geometry_status)
 GEOMETRY_RPROMPT=(geometry_node geometry_hostname)
 
-
-# zsh_interactive=("exports" "options" "aliases" "functions" "zle" "bindings" "compctl" "style" "misc" "prompt")
-zsh_interactive=(
-  "aliases"
-  #"completions"
-  "prompt"
-  "notify"
-)
-
-for zi in "${zsh_interactive[@]}"; do
-  [[ -f "$ZSHDDIR/$zi" ]] && source $ZSHDDIR/$zi
-done
-
 ### plugins
 plugins_dir="$HOME/.local/share/zsh/submodules"
 plugins=(
@@ -68,13 +55,29 @@ done
 # fi
 
 if (( $+commands[atuin] )); then
-  eval "$(atuin init zsh)"
+  eval "$(atuin init zsh --disable-up-arrow)"
 fi
 
 if (( $+commands[navi] )); then
   eval "$(navi widget zsh)"
 fi
 bindkey -s "^n" "navi\n"
+
+
+# zsh_interactive=("exports" "options" "aliases" "functions" "zle" "bindings" "compctl" "style" "misc" "prompt")
+zsh_interactive=(
+  "aliases"
+  #"completions"
+  "prompt"
+  "notify"
+)
+
+for zi in "${zsh_interactive[@]}"; do
+  [[ -f "$ZSHDDIR/$zi" ]] && source $ZSHDDIR/$zi
+done
+
+
+
 
 # (switch to Emacs mode)
 bindkey -e
@@ -180,7 +183,7 @@ done
 # source /usr/share/bash-completion/completions/awg-quick
 
 #принимает несколько слов или их частей (слово*ово)
-bindkey "^R" history-incremental-pattern-search-backward
+#bindkey "^R" history-incremental-pattern-search-backward
 bindkey "^S" history-incremental-pattern-search-forward
 
 # Hishtory Config:

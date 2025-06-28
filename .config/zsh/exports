@@ -77,7 +77,7 @@ export PYTHONSTARTUP="$XDG_CONFIG_HOME"/python/pythonrc
 ## RUST
 export CARGO_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/cargo"
 export RUSTUP_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/rustup"
-prependToPath "$CARGO_HOME/bin"
+appendToPath "$CARGO_HOME/bin"
 
 #R
 export R_HOME=/usr/lib/R
