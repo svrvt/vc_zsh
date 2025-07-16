@@ -27,9 +27,27 @@ SAVEHIST='128000'
 #ZDOTDIR=${ZDOTDIR:-${HOME}}
 ZSHDDIR=${ZSHDDIR:-${HOME}/.config/zsh}
 
-GEOMETRY_PROMPT=(geometry_newline geometry_path geometry_git geometry_newline geometry_virtualenv geometry_status)
-GEOMETRY_RPROMPT=(geometry_node geometry_hostname)
+case $(lsb_release -si 2>/dev/null) in
+  Ubuntu)
+    lsb_icon=
+    ;;
+  Debian)
+    lsb_icon=
+    ;;
+  Guix)
+    lsb_icon=
+    ;;
+esac
 
+GEOMETRY_PROMPT=(geometry_virtualenv geometry_git geometry_status)
+GEOMETRY_RPROMPT=(geometry_path geometry_node geometry_hostname)
+GEOMETRY_STATUS_COLOR=gray
+GEOMETRY_STATUS_SYMBOL=$lsb_icon
+GEOMETRY_STATUS_SYMBOL_ERROR=$lsb_icon
+GEOMETRY_STATUS_SYMBOL_ROOT=#
+GEOMETRY_STATUS_SYMBOL_ROOT_ERROR=#
+
+ 
 ### plugins
 plugins_dir="$HOME/.local/share/zsh/submodules"
 plugins=(
@@ -63,7 +81,6 @@ if (( $+commands[navi] )); then
 fi
 bindkey -s "^n" "navi\n"
 
-
 # zsh_interactive=("exports" "options" "aliases" "functions" "zle" "bindings" "compctl" "style" "misc" "prompt")
 zsh_interactive=(
   "aliases"
@@ -71,12 +88,9 @@ zsh_interactive=(
   "prompt"
   "notify"
 )
-
 for zi in "${zsh_interactive[@]}"; do
   [[ -f "$ZSHDDIR/$zi" ]] && source $ZSHDDIR/$zi
 done
-
-
 
 
 # (switch to Emacs mode)
