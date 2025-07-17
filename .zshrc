@@ -39,13 +39,14 @@ case $(lsb_release -si 2>/dev/null) in
     ;;
 esac
 
-GEOMETRY_PROMPT=(geometry_virtualenv geometry_git geometry_status)
-GEOMETRY_RPROMPT=(geometry_path geometry_node geometry_hostname)
+GEOMETRY_PROMPT=(geometry_path geometry_virtualenv geometry_status)
+GEOMETRY_RPROMPT=(geometry_git geometry_node geometry_hostname)
 GEOMETRY_STATUS_COLOR=gray
 GEOMETRY_STATUS_SYMBOL=$lsb_icon
 GEOMETRY_STATUS_SYMBOL_ERROR=$lsb_icon
 GEOMETRY_STATUS_SYMBOL_ROOT=#
 GEOMETRY_STATUS_SYMBOL_ROOT_ERROR=#
+GEOMETRY_PATH_TRUNCATE=1
 
  
 ### plugins
